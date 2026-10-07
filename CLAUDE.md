@@ -426,6 +426,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [x] `contracts/` med skabeloner: OpenAPI (`POST /positions`, `GET /events/active`, `GET /history`), AsyncAPI (`positions`-kø, `event-changes`-exchange) og JSON-schemas uden felter.
 - [x] `docker-compose.yml`: RabbitMQ (5672, UI 15672), main-db (5432, `maindb`), event-db PostGIS (5433, `eventdb`). Bruger/password: `crowdcontrol`. Forbindelserne står i Java `application.properties` og C# `appsettings.json`.
 - [x] `mobile-app/` (afsnit 7).
+- [x] EF Core i `Infrastructure.Persistence`: Npgsql-provider, snake_case-navne, tom `MainDbContext`, `AddPersistence(IConfiguration)` og `Configurations/` til `IEntityTypeConfiguration<T>`. `Api` kører `Database.Migrate()` ved opstart i Development/Local. `dotnet-ef` er lokalt værktøj (`processing-server/dotnet-tools.json`; kør `dotnet tool restore`). Ny migration: `dotnet dotnet-ef migrations add <Navn> --project src/CrowdControl.Infrastructure.Persistence --startup-project src/CrowdControl.Api`.
 - [x] CI: `.github/workflows/ingestion-server.yml` og `processing-server.yml` (GitHub Actions) med path-filtre; `contracts/**` trigger begge. `mvnw` er markeret eksekverbar i git.
 
 **Næste skridt**
