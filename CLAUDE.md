@@ -390,7 +390,7 @@ Arkitekturtests kan tilføjes med NetArchTest (C#) og ArchUnit (Java).
 
 - "Appen" er udelukkende et sted, hvor brugeren accepterer at dele sin geolocation. Den skal på sigt embeddes i et andet system.
 - Kun `index.html` (samtykke-knap) og `app.js` (Geolocation API → `POST /positions` i et fast interval med et anonymt `sessionId`). Ingen CSS, ingen frameworks, intet build-værktøj (ingen npm/Vite).
-- `ingestion-server/bootstrap/pom.xml` tager `mobile-app/` med som resource med `targetPath=static`, så siden serveres af ingestion-server uden et kopi-trin.
+- `ingestion-server/bootstrap/pom.xml` kopierer `mobile-app/` til `static/` med `maven-resources-plugin:copy-resources` (fase `process-resources`), så siden serveres af ingestion-server uden et manuelt kopi-trin. Bevidst ikke som `<resource>`, da IntelliJ så viser mappen som `mobile-app [bootstrap]`. Kør derfor ingestion-server via Maven (`spring-boot:run`) eller med "Delegate IDE build/run actions to Maven" slået til, hvis mobil-appen skal serveres.
 - Payloaden i `app.js` skal følge `contracts/openapi/ingestion-api.yaml`.
 
 ---

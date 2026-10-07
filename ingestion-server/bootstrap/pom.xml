@@ -54,17 +54,31 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <!-- Mobil-appen serveres som statisk indhold -->
-            <resource>
-                <directory>${project.basedir}/../../mobile-app</directory>
-                <targetPath>static</targetPath>
-            </resource>
-        </resources>
         <plugins>
+            <!-- Mobil-appen serveres som statisk indhold. Kopieres med copy-resources
+                 i stedet for <resources>, så IntelliJ ikke gør mobile-app/ til en
+                 resource-rod i bootstrap (vises ellers som "mobile-app [bootstrap]"). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-mobile-app</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../../mobile-app</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
