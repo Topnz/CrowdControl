@@ -78,7 +78,7 @@ CrowdControl/
 ├── docker-compose.yml               # RabbitMQ + main-db + event-db (PostGIS)
 ├── .gitignore  .editorconfig
 ├── docs/architecture/
-│   └── C2-centrale-teknologier.drawio
+│   └── c2.png
 │
 ├── contracts/                       # Det ENESTE der deles på tværs af containere
 │   ├── openapi/
@@ -92,12 +92,9 @@ CrowdControl/
 │       ├── EventUpdated.v1.json
 │       └── EventDeleted.v1.json
 │
-├── mobile-app/                      # JS/HTML, Vite – egen dev-server mod mock-API
-│   ├── src/
-│   │   ├── api/positionClient.js    # interface + fetch-impl + fake-impl
-│   │   ├── geo/locationProvider.js  # wrapper om Geolocation API (kan fakes)
-│   │   └── app.js
-│   └── package.json                 # build → kopieres ind i bootstrap/static
+├── mobile-app/                      # ren HTML/JS, intet build-værktøj, ingen CSS
+│   ├── index.html                   # samtykke-knap
+│   └── app.js                       # Geolocation API → POST /positions
 │
 ├── ingestion-server/                # Java 21, Spring Boot 4.1.1, Maven multi-module
 │   ├── pom.xml                      # parent, packaging=pom
@@ -111,7 +108,7 @@ CrowdControl/
 │   ├── adapter-processing-client/   # REST: hent aktive events ved opstart
 │   ├── adapter-in-memory/           # fakes af alle out-porte til lokal kørsel
 │   └── bootstrap/                   # @SpringBootApplication + @Configuration
-│       └── src/main/resources/static/   # ← mobile-app build lander her
+│                                    # pom'en pakker mobile-app/ som static/
 │
 └── processing-server/               # C#, .NET solution (åbnes i Rider)
     ├── CrowdControl.Processing.sln
@@ -139,7 +136,6 @@ Java-adapterne ligger fladt med `adapter-`-præfiks (ikke i en `adapters/`-under
 - Roden `CrowdControl/` er oprettet i IntelliJ som **Empty Project** med git-repository.
 - `ingestion-server/` er tilføjet via **File → New → Module → Spring Boot** (Maven, Java 21, JDK liberica-21, groupId `dk.crowdcontrol`).
 - IntelliJ kan ikke arbejde ordentligt med C#. `processing-server/` åbnes i **Rider** (`CrowdControl.Processing.sln`). Begge IDE'er peger på samme repo.
-- `mobile-app/` oprettes med Vite (`npm create vite@latest mobile-app -- --template vanilla`) eller via IntelliJ's Vite-generator.
 - Udviklingsmiljøet er Windows. Maven køres med `.\mvnw.cmd` fra `ingestion-server/`.
 
 ---
@@ -324,7 +320,7 @@ Med `--spring.profiles.active=local` skal Java-serveren kunne køre helt uden Ra
 Kør fra `CrowdControl/processing-server`:
 
 ```bash
-dotnet new sln -n CrowdControl.Processing
+dotnet new sln -n CrowdControl.Processing --format sln
 
 dotnet new classlib    -n CrowdControl.Domain                     -o src/CrowdControl.Domain
 dotnet new classlib    -n CrowdControl.Application                -o src/CrowdControl.Application
@@ -392,24 +388,22 @@ Arkitekturtests kan tilføjes med NetArchTest (C#) og ArchUnit (Java).
 
 ## 7. Mobile-app
 
-- Oprettes med Vite (vanilla template) i `mobile-app/`.
-- `api/positionClient.js` har en fetch-implementering og en fake; `geo/locationProvider.js` wrapper Geolocation API, så positioner kan fakes.
-- Build-output (`mobile-app/dist`) kopieres ind i `ingestion-server/bootstrap/src/main/resources/static` (fx via en Maven-plugin eller et script).
+- "Appen" er udelukkende et sted, hvor brugeren accepterer at dele sin geolocation. Den skal på sigt embeddes i et andet system.
+- Kun `index.html` (samtykke-knap) og `app.js` (Geolocation API → `POST /positions` i et fast interval med et anonymt `sessionId`). Ingen CSS, ingen frameworks, intet build-værktøj (ingen npm/Vite).
+- `ingestion-server/bootstrap/pom.xml` tager `mobile-app/` med som resource med `targetPath=static`, så siden serveres af ingestion-server uden et kopi-trin.
+- Payloaden i `app.js` skal følge `contracts/openapi/ingestion-api.yaml`.
 
 ---
 
 ## 8. Root `.gitignore`
 
 ```
-.idea/
-*.iml
-target/
-bin/
-obj/
-node_modules/
-dist/
+.idea/  *.iml  .vs/  .vscode/  *.user  *.DotSettings.user
+target/  bin/  obj/  TestResults/  node_modules/
 .env
 ```
+
+Bemærk: `dist/` må **ikke** ignoreres, da Dashboardet bruger `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css` (kun den fil er beholdt fra Blazor-skabelonen).
 
 Git-repoet skal ligge i `CrowdControl/` (roden), ikke inde i `ingestion-server/`. Den `.gitignore`, Initializr lavede i `ingestion-server/`, må gerne blive liggende.
 
@@ -428,18 +422,16 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [x] `IngestionServerApplication` flyttet til `bootstrap/` i pakken `dk.crowdcontrol.ingestion`; tomme pakker lagt jf. afsnit 5.3.
 - [x] `local`-profil (`bootstrap/src/main/resources/application-local.properties`) slår DataSource-, JDBC-, Flyway- og Rabbit-autokonfiguration fra. `contextLoads()` kører med `@ActiveProfiles("local")`.
 - [x] `.\mvnw.cmd clean verify` er grøn. Root `.gitignore` er oprettet, og første commit er lavet på `main`.
+- [x] `processing-server/` oprettet jf. afsnit 6 (`dotnet new sln --format sln`, da .NET 10 ellers laver `.slnx`). `Api` serverer Dashboard; launch-profilen `local` sætter miljøet `Local`. `dotnet build` + `dotnet test` er grønne.
+- [x] `contracts/` med skabeloner: OpenAPI (`POST /positions`, `GET /events/active`, `GET /history`), AsyncAPI (`positions`-kø, `event-changes`-exchange) og JSON-schemas uden felter.
+- [x] `docker-compose.yml`: RabbitMQ (5672, UI 15672), main-db (5432, `maindb`), event-db PostGIS (5433, `eventdb`). Bruger/password: `crowdcontrol`. Forbindelserne står i Java `application.properties` og C# `appsettings.json`.
+- [x] `mobile-app/` (afsnit 7).
+- [x] CI: `.github/workflows/ingestion-server.yml` og `processing-server.yml` (GitHub Actions) med path-filtre; `contracts/**` trigger begge. `mvnw` er markeret eksekverbar i git.
 
-**Næste skridt (Java)**
+**Næste skridt**
 
-- [ ] Domæne (`Position`, `ActiveEvent`, `EventArea`, `GeoPoint`) og porte/services jf. afsnit 5.4–5.5.
-- [ ] In-memory-fakes af alle out-porte i `adapter-in-memory` (`@Profile("local")`).
-- [ ] Reload Maven i IntelliJ, så modulerne bliver genkendt.
-
-**Senere**
-
-- [ ] Skriv kontrakter i `contracts/` (OpenAPI, AsyncAPI, JSON-schemas) før implementering.
-- [ ] `docker-compose.yml` med RabbitMQ, main-db (PostgreSQL) og event-db (PostgreSQL + PostGIS).
-- [ ] Opret `processing-server/` (afsnit 6) og `mobile-app/` (afsnit 7).
+- [ ] Aftal felterne i `contracts/` (schemas og request/response-typer).
+- [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 
 ---
 

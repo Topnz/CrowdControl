@@ -1,0 +1,65 @@
+asyncapi: 3.0.0
+info:
+  title: CrowdControl Messaging
+  version: 0.1.0
+  description: RabbitMQ-kontrakter mellem ingestion-server (Java) og processing-server (C#).
+servers:
+  local:
+    host: localhost:5672
+    protocol: amqp
+channels:
+  positions:
+    address: positions
+    description: Kø med positioner (Java -> C#).
+    messages:
+      PositionReceived:
+        $ref: '#/components/messages/PositionReceived'
+  eventChanges:
+    address: event-changes
+    description: Exchange med event-ændringer (C# -> Java).
+    messages:
+      EventCreated:
+        $ref: '#/components/messages/EventCreated'
+      EventUpdated:
+        $ref: '#/components/messages/EventUpdated'
+      EventDeleted:
+        $ref: '#/components/messages/EventDeleted'
+operations:
+  publishPosition:
+    action: send
+    channel:
+      $ref: '#/channels/positions'
+    summary: Ingestion-server publicerer en valideret position.
+  receivePosition:
+    action: receive
+    channel:
+      $ref: '#/channels/positions'
+    summary: Processing-server modtager positioner til aggregering.
+  publishEventChange:
+    action: send
+    channel:
+      $ref: '#/channels/eventChanges'
+    summary: Processing-server publicerer EventCreated/EventUpdated/EventDeleted.
+  receiveEventChange:
+    action: receive
+    channel:
+      $ref: '#/channels/eventChanges'
+    summary: Ingestion-server opdaterer sin kopi af aktive events.
+components:
+  messages:
+    PositionReceived:
+      contentType: application/json
+      payload:
+        $ref: '../schemas/PositionReceived.v1.json'
+    EventCreated:
+      contentType: application/json
+      payload:
+        $ref: '../schemas/EventCreated.v1.json'
+    EventUpdated:
+      contentType: application/json
+      payload:
+        $ref: '../schemas/EventUpdated.v1.json'
+    EventDeleted:
+      contentType: application/json
+      payload:
+        $ref: '../schemas/EventDeleted.v1.json'

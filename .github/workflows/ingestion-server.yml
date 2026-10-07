@@ -1,0 +1,31 @@
+name: ingestion-server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ingestion-server/**'
+      - 'mobile-app/**'
+      - 'contracts/**'
+      - '.github/workflows/ingestion-server.yml'
+  pull_request:
+    paths:
+      - 'ingestion-server/**'
+      - 'mobile-app/**'
+      - 'contracts/**'
+      - '.github/workflows/ingestion-server.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ingestion-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: liberica
+          java-version: '21'
+          cache: maven
+      - run: ./mvnw -B clean verify

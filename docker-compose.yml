@@ -1,0 +1,38 @@
+# Lokal infrastruktur til udvikling: docker compose up -d
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_DEFAULT_USER: crowdcontrol
+      RABBITMQ_DEFAULT_PASS: crowdcontrol
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI: http://localhost:15672
+
+  # Ejes af processing-server (EF Core migrations)
+  main-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: maindb
+      POSTGRES_USER: crowdcontrol
+      POSTGRES_PASSWORD: crowdcontrol
+    ports:
+      - "5432:5432"
+    volumes:
+      - main-db-data:/var/lib/postgresql/data
+
+  # Ejes af ingestion-server (Flyway)
+  event-db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: eventdb
+      POSTGRES_USER: crowdcontrol
+      POSTGRES_PASSWORD: crowdcontrol
+    ports:
+      - "5433:5432"
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+
+volumes:
+  main-db-data:
+  event-db-data:

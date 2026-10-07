@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/EventUpdated.v1.json",
+  "title": "EventUpdated",
+  "description": "Et event er ændret i processing-server (C# -> Java).",
+  "type": "object",
+  "properties": {},
+  "required": [],
+  "additionalProperties": false
+}

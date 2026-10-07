@@ -1,0 +1,29 @@
+name: processing-server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'processing-server/**'
+      - 'contracts/**'
+      - '.github/workflows/processing-server.yml'
+  pull_request:
+    paths:
+      - 'processing-server/**'
+      - 'contracts/**'
+      - '.github/workflows/processing-server.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: processing-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release

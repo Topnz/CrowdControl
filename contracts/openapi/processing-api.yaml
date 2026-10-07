@@ -1,0 +1,42 @@
+openapi: 3.1.0
+info:
+  title: CrowdControl Processing API
+  version: 0.1.0
+  description: Ingestion-server og Dashboard -> processing-server (C#).
+servers:
+  - url: http://localhost:5262
+paths:
+  /events/active:
+    get:
+      summary: Hent aktive events (kaldes af ingestion-server ved opstart)
+      operationId: getActiveEvents
+      responses:
+        '200':
+          description: Liste over aktive events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActiveEvent'
+  /history:
+    get:
+      summary: Hent heatmap-historik (kaldes af dashboardet)
+      operationId: getHistory
+      responses:
+        '200':
+          description: Historiske heatmap-data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeatmapHistory'
+components:
+  schemas:
+    ActiveEvent:
+      type: object
+      description: TODO – ID, tidsrum og område
+      properties: {}
+    HeatmapHistory:
+      type: object
+      description: TODO – felter aftales i holdet
+      properties: {}

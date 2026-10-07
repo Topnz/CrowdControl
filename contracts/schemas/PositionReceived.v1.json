@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/PositionReceived.v1.json",
+  "title": "PositionReceived",
+  "description": "En deltagers position, publiceret af ingestion-server til positions-køen (Java -> C#).",
+  "type": "object",
+  "properties": {},
+  "required": [],
+  "additionalProperties": false
+}

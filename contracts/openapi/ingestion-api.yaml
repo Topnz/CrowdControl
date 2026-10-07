@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: CrowdControl Ingestion API
+  version: 0.1.0
+  description: Mobile app -> ingestion-server (Java).
+servers:
+  - url: http://localhost:8080
+paths:
+  /positions:
+    post:
+      summary: Modtag en anonym position fra mobil-appen
+      operationId: postPosition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PositionRequest'
+      responses:
+        '202':
+          description: Positionen er modtaget og lagt i køen
+        '400':
+          description: Ugyldig position
+        '422':
+          description: Positionen ligger ikke inden for et aktivt event
+        '429':
+          description: Rate limit overskredet
+components:
+  schemas:
+    PositionRequest:
+      type: object
+      description: TODO – felter aftales i holdet
+      properties: {}

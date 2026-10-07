@@ -1,8 +1,17 @@
+# IDE
 .idea/
 *.iml
+.vs/
+.vscode/
+*.user
+*.DotSettings.user
+
+# Build-output
 target/
 bin/
 obj/
+TestResults/
 node_modules/
-dist/
+
+# Hemmeligheder
 .env
