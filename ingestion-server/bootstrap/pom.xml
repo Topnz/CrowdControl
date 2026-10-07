@@ -12,6 +12,10 @@
 
     <artifactId>bootstrap</artifactId>
 
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>dk.crowdcontrol</groupId>

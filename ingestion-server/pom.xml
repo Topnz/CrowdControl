@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- spring-boot:run køres kun i bootstrap (som har main-klassen) -->
+        <spring-boot.run.skip>true</spring-boot.run.skip>
     </properties>
 
     <modules>
