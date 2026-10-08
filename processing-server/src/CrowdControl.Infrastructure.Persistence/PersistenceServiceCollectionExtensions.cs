@@ -15,6 +15,9 @@ public static class PersistenceServiceCollectionExtensions
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention());
 
+        // Repositories registreres her, fx:
+        // services.AddScoped<IEventRepository, EfEventRepository>();
+
         return services;
     }
 }
