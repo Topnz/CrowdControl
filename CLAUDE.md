@@ -44,22 +44,23 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 | Dashboard → Processing-server | Henter historik | REST, JSON/HTTPS |
 | Dashboard → Processing-server | Henter statisk indhold | HTTPS |
 
-**Epics** (i user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
+**Epics** (Jira-projekt `ID`, eksport i `docs/Jira (1).xml`; stories og acceptkriterier i `docs/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
 
 | Epic | Indhold |
 |---|---|
-| Samtykke og privatliv | Aktivt samtykke; information om indsamlede data og opbevaringstid før samtykke; stop deling; automatisk stop når eventet slutter; vis om positionen deles lige nu. |
-| Positionsdeling | Anonym deling; kun positioner inden for eventets område og tidsrum; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed. |
-| Eventadministration | Opret/redigér/slet event; liste over kommende og aktive events; et oprettet/redigeret event modtager straks positioner. |
-| Zoneadministration | Opret/redigér/slet zoner; maks. antal deltagere pr. zone med underretning ved overskridelse; ny zone vises straks med antal deltagere. |
-| Live overblik | Live heatmap for event og zoner. |
-| Historik og datahåndtering | Historik over afholdte events og over positionsdata i tidsintervaller; automatisk sletning efter 24 måneder. |
-| Konto og adgang | Log ind (præoprettet konto); skift kodeord ved første login; ændre kodeord; log ud. |
+| ID-5 Håndtér samtykke & privatliv | Aktivt samtykke; information om indsamlede data og opbevaringstid før samtykke; stop deling; automatisk stop når eventet slutter; vis om positionen deles lige nu. |
+| ID-6 Del position | Anonym deling; antal deltagere vises kun for eventets zoner; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed; nøjagtighed i meter på hver position, så upræcise data kan frasorteres. |
+| ID-7 Administrér event | Opret/redigér/slet event; liste over kommende og aktive events (med zoner og status); et oprettet/redigeret event modtager positioner inden for 30 sekunder. |
+| ID-8 Administrér zone | Opret/redigér/slet zoner; maks. antal deltagere pr. zone med notifikation, når antallet når 90 % af kapaciteten, og markering ved overskridelse; ny zone vises straks med antal deltagere. |
+| ID-9 Overvåg event | Live heatmap for event og zoner, opdateret ved hver ny data uden genindlæsning; positioner uden for eventets område og tidsrum frasorteres. |
+| ID-10 Se historik | Historik over afholdte events og over positionsdata i tidsintervaller; automatisk sletning efter 24 måneder. |
+| ID-11 Log ind & administrér konto | Log ind (præoprettet konto); skift kodeord ved første login; ændre kodeord; log ud. |
 
 Konsekvenser for arkitekturen:
 
 - Ingestion-server filtrerer kun på eventets område og tidsrum. Zoner kendes kun af processing-server.
 - Sendeinterval og eventets sluttid skal kunne hentes af mobil-appen (via ingestion-server), da appen skal sende i det valgte interval og stoppe automatisk. Det kræver felter i `contracts/`.
+- Hver position har nøjagtighed i meter (`accuracy` fra Geolocation API), som sendes med hele vejen til processing-server, så upræcise positioner kan frasorteres før zone-optælling (ID-40).
 - Rå positioner persisteres ikke; kun aggregerede grid-celler gemmes, og de slettes automatisk efter 24 måneder (fast opbevaringstid, ikke konfigurerbar). Opbevaringstiden står som fast tekst på samtykkesiden.
 
 ---
@@ -452,8 +453,8 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 **Næste skridt**
 
 - [ ] Aftal felterne i `contracts/` (schemas og request/response-typer), inkl. sendeinterval og sluttid til mobil-appen.
-- [ ] Skriv SMART-acceptkriterier til user stories (afsnit 1, Epics) og opdatér `docs/user-stories.md`.
-- [ ] Opdatér C2-diagrammet til single-tenant (fjern customers/event hosts).
+- [ ] Gør acceptkriterierne i `docs/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
+- [ ] Eksportér `docs/architecture/c2.png` igen fra den opdaterede `c2.drawio`.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 
