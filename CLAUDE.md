@@ -44,6 +44,11 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 | Dashboard → Processing-server | Henter historik | REST, JSON/HTTPS |
 | Dashboard → Processing-server | Henter statisk indhold | HTTPS |
 
+**Aktører**
+
+- **Arrangør** – står for at afholde et event og vil have visuelle oversigter over, hvor deltagerne befinder sig på bestemte tidspunkter.
+- **Deltager** – deltager i et event og ønsker den bedst mulige oplevelse ved eventet.
+
 **Epics** (Jira-projekt `ID`, eksport i `docs/Jira (1).xml`; stories og acceptkriterier i `docs/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
 
 | Epic | Indhold |
@@ -62,6 +67,35 @@ Konsekvenser for arkitekturen:
 - Sendeinterval og eventets sluttid skal kunne hentes af mobil-appen (via ingestion-server), da appen skal sende i det valgte interval og stoppe automatisk. Det kræver felter i `contracts/`.
 - Hver position har nøjagtighed i meter (`accuracy` fra Geolocation API), som sendes med hele vejen til processing-server, så upræcise positioner kan frasorteres før zone-optælling (ID-40).
 - Rå positioner persisteres ikke; kun aggregerede grid-celler gemmes, og de slettes automatisk efter 24 måneder (fast opbevaringstid, ikke konfigurerbar). Opbevaringstiden står som fast tekst på samtykkesiden.
+
+### 1.1 Begreber
+
+| Begreb | Betydning |
+|---|---|
+| Event | Et arrangement med navn, start- og sluttid, et område tegnet som polygon på et kort og et sendeinterval. Status: kommende, aktiv eller afsluttet. |
+| Zone | Et navngivent delområde inden for et events område (fx "Scene A", "Indgang") med en valgfri kapacitet (maks. antal deltagere). Arrangøren får besked, når antallet når 90 % af kapaciteten. |
+| Sendeinterval | Hvor ofte mobil-appen sender deltagerens position. Sættes af arrangøren pr. event. |
+| Samtykke | Deltagerens aktive accept af positionsdeling. Kan trækkes tilbage med stop-knappen og ophører automatisk ved eventets sluttid. |
+| Position | Koordinater, nøjagtighed i meter og tidspunkt, sendt anonymt med et tilfældigt session-ID. |
+| Historik | Aggregerede positionsdata (antal deltagere i eventet og zonerne over tid), som slettes efter 24 måneder. |
+
+### 1.2 Use cases
+
+Én use case pr. epic (UC1–UC7, resuméer og stories i `docs/user-stories.md`):
+
+- **Deltager:** UC1 Håndtér samtykke & privatliv, UC2 Del position.
+- **Arrangør:** UC2 Del position (sekundær), UC3 Administrér event, UC4 Administrér zone, UC5 Overvåg event, UC6 Se historik, UC7 Log ind & administrér konto.
+
+**UC3 Administrér event (ID-7)**, fully dressed (påbegyndt):
+
+- *Aktør:* Arrangør.
+- *Basis-sekvens:* Systemet viser en liste over kommende og aktive events samt "Opret nyt event". Arrangøren vælger at oprette et nyt event eller åbne et eksisterende.
+- *Scenarie A, opret nyt event:*
+  1. Systemet viser felter til navn, start- og sluttid.
+  2. Arrangøren udfylder felterne.
+  3. Systemet viser et kort.
+  4. Arrangøren tegner eventets område som en polygon ved at vælge hjørnerne.
+  5. Systemet gemmer eventet.
 
 ---
 
