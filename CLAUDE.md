@@ -49,17 +49,17 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 - **Arrangør** – står for at afholde et event og vil have visuelle oversigter over, hvor deltagerne befinder sig på bestemte tidspunkter.
 - **Deltager** – deltager i et event og ønsker den bedst mulige oplevelse ved eventet.
 
-**Epics** (Jira-projekt `ID`, eksport i `docs/Jira (1).xml`; stories og acceptkriterier i `docs/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
+**Epics** (Jira-projekt `ID`; stories, acceptkriterier og use case-resuméer i `docs/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
 
-| Epic | Indhold |
-|---|---|
-| ID-5 Håndtér samtykke & privatliv | Aktivt samtykke; information om indsamlede data og opbevaringstid før samtykke; stop deling; automatisk stop når eventet slutter; vis om positionen deles lige nu. |
-| ID-6 Del position | Anonym deling; antal deltagere vises kun for eventets zoner; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed; nøjagtighed i meter på hver position, så upræcise data kan frasorteres. |
-| ID-7 Administrér event | Opret/redigér/slet event; liste over kommende og aktive events (med zoner og status); et oprettet/redigeret event modtager positioner inden for 30 sekunder. |
-| ID-8 Administrér zone | Opret/redigér/slet zoner; maks. antal deltagere pr. zone med notifikation, når antallet når 90 % af kapaciteten, og markering ved overskridelse; ny zone vises straks med antal deltagere. |
-| ID-9 Overvåg event | Live heatmap for event og zoner, opdateret ved hver ny data uden genindlæsning; positioner uden for eventets område og tidsrum frasorteres. |
-| ID-10 Se historik | Historik over afholdte events og over positionsdata i tidsintervaller; automatisk sletning efter 24 måneder. |
-| ID-11 Log ind & administrér konto | Log ind (præoprettet konto); skift kodeord ved første login; ændre kodeord; log ud. |
+| Epic | Stories | Indhold |
+|---|---|---|
+| ID-5 Håndtér samtykke & privatliv | ID-14, 15, 18, 21, 22 | Aktivt samtykke; information om indsamlede data og opbevaringstid før samtykke; stop deling; automatisk stop når eventet slutter; vis om positionen deles lige nu. |
+| ID-6 Del position | ID-16, 20, 28, 29, 40 | Anonym deling; antal deltagere vises kun for eventets zoner; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed; nøjagtighed i meter på hver position, så upræcise data kan frasorteres. |
+| ID-7 Administrér event | ID-13, 23, 24, 33, 35 | Opret/redigér/slet event; liste over kommende og aktive events (med navn, tidsrum, zoner og status); et oprettet/redigeret event modtager positioner inden for 30 sekunder. |
+| ID-8 Administrér zone | ID-25, 26, 27, 34, 36 | Opret/redigér/slet zoner; maks. antal deltagere pr. zone med notifikation, når antallet når 90 % af kapaciteten, og markering ved overskridelse; ny zone vises straks med antal deltagere. |
+| ID-9 Overvåg event | ID-17, 41 | Live heatmap (positioner samlet i grid-celler) og antal deltagere pr. zone, opdateret ved hver ny data uden genindlæsning; positioner uden for eventets område og tidsrum afvises af ingestion-server. |
+| ID-10 Se historik | ID-37, 38, 39 | Liste over afholdte events (navn, tidsrum, område på kort); afspil heatmap og zonetal for et valgt tidsinterval; automatisk sletning af aggregerede data efter 24 måneder. |
+| ID-11 Log ind & administrér konto | ID-19, 30, 31, 32 | Log ind (præoprettet konto, ingen adgang til dashboard eller API uden login); skift kodeord ved første login; ændre kodeord (kræver nuværende kodeord); log ud. |
 
 Konsekvenser for arkitekturen:
 
@@ -73,9 +73,9 @@ Konsekvenser for arkitekturen:
 | Begreb | Betydning |
 |---|---|
 | Event | Et arrangement med navn, start- og sluttid, et område tegnet som polygon på et kort og et sendeinterval. Status: kommende, aktiv eller afsluttet. |
-| Zone | Et navngivent delområde inden for et events område (fx "Scene A", "Indgang") med en valgfri kapacitet (maks. antal deltagere). Arrangøren får besked, når antallet når 90 % af kapaciteten. |
+| Zone | Et navngivent delområde inden for et events område (fx "Bøgescenen Sektion A") med en valgfri kapacitet (maks. antal deltagere). Arrangøren får en notifikation, når antallet når 90 % af kapaciteten, og zonen markeres, når kapaciteten overskrides. |
 | Sendeinterval | Hvor ofte mobil-appen sender deltagerens position. Sættes af arrangøren pr. event. |
-| Samtykke | Deltagerens aktive accept af positionsdeling. Kan trækkes tilbage med stop-knappen og ophører automatisk ved eventets sluttid. |
+| Samtykke | Deltagerens aktive accept af positionsdeling. Kan trækkes tilbage med stop-knappen (session-ID'et slettes i browseren) og ophører automatisk ved eventets sluttid. |
 | Position | Koordinater, nøjagtighed i meter og tidspunkt, sendt anonymt med et tilfældigt session-ID. |
 | Historik | Aggregerede positionsdata (antal deltagere i eventet og zonerne over tid), som slettes efter 24 måneder. |
 
@@ -83,8 +83,9 @@ Konsekvenser for arkitekturen:
 
 Én use case pr. epic (UC1–UC7, resuméer og stories i `docs/user-stories.md`):
 
-- **Deltager:** UC1 Håndtér samtykke & privatliv, UC2 Del position.
-- **Arrangør:** UC2 Del position (sekundær), UC3 Administrér event, UC4 Administrér zone, UC5 Overvåg event, UC6 Se historik, UC7 Log ind & administrér konto.
+- **Deltager:** UC1 Håndtér samtykke & privatliv, UC2 Del position (primær).
+- **Arrangør:** UC2 Del position (sekundær), UC3 Administrér event, UC4 Administrér zone, UC5 Overvåg event, UC6 Se historik (primær), UC7 Log ind & administrér konto.
+- **System:** UC6 Se historik (automatisk sletning efter 24 måneder).
 
 **UC3 Administrér event (ID-7)**, fully dressed (påbegyndt):
 
