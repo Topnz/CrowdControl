@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/rabbitMQ/PositionReceived.v1.json",
+  "title": "PositionReceived",
+  "description": "En position, som ingestion-server har godkendt til et aktivt event, publiceret til positions-køen (Java -> C#). Positioner uden for eventets område og tidsrum sendes ikke.",
+  "type": "object",
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Anonymt, tilfældigt ID pr. enhed."
+    },
+    "eventId": { "type": "string", "format": "uuid" },
+    "zoneIds": {
+      "type": "array",
+      "description": "De zoner, positionen ligger i. Tom, hvis den ligger i eventet, men uden for alle zoner. Flere, hvis zonerne overlapper.",
+      "items": { "type": "string", "format": "uuid" },
+      "uniqueItems": true
+    },
+    "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+    "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+    "accuracy": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Nøjagtighed i meter fra Geolocation API. Bruges i processing-server til at frasortere upræcise positioner."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hvornår positionen blev målt på enheden (UTC)."
+    }
+  },
+  "required": ["sessionId", "eventId", "zoneIds", "latitude", "longitude", "accuracy", "timestamp"],
+  "additionalProperties": false
+}

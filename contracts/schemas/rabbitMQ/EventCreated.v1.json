@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/rabbitMQ/EventCreated.v1.json",
+  "title": "EventCreated",
+  "description": "Et event er oprettet i processing-server (C# -> Java). Indeholder hele eventet inkl. zoner.",
+  "$ref": "../shared/common.v1.json#/$defs/Event"
+}
