@@ -63,7 +63,7 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 
 Konsekvenser for arkitekturen:
 
-- Ingestion-server filtrerer kun på eventets område og tidsrum. Zoner kendes kun af processing-server.
+- Ingestion-server afviser positioner uden for et aktivt events område og tidsrum, så de aldrig sendes til processing-server. Zoner oprettes i processing-server og kopieres til ingestion-server (med eventet), som slår op, hvilke zoner en position ligger i, og sender `sessionId`, position, `eventId` og zone-ID'er videre. Kapacitet og optælling håndteres kun i processing-server.
 - Sendeinterval og eventets sluttid skal kunne hentes af mobil-appen (via ingestion-server), da appen skal sende i det valgte interval og stoppe automatisk. Det kræver felter i `contracts/`.
 - Hver position har nøjagtighed i meter (`accuracy` fra Geolocation API), som sendes med hele vejen til processing-server, så upræcise positioner kan frasorteres før zone-optælling (ID-40).
 - Rå positioner persisteres ikke; kun aggregerede grid-celler gemmes, og de slettes automatisk efter 24 måneder (fast opbevaringstid, ikke konfigurerbar). Opbevaringstiden står som fast tekst på samtykkesiden.
@@ -143,10 +143,13 @@ CrowdControl/
 │   ├── asyncapi/
 │   │   └── messaging.yaml           # positions-kø + event-exchange
 │   └── schemas/
-│       ├── PositionReceived.v1.json
-│       ├── EventCreated.v1.json
-│       ├── EventUpdated.v1.json
-│       └── EventDeleted.v1.json
+│       ├── rabbitMQ/                # beskeder på køen/exchangen
+│       │   ├── PositionReceived.v1.json
+│       │   ├── EventCreated.v1.json
+│       │   ├── EventUpdated.v1.json
+│       │   └── EventDeleted.v1.json
+│       └── shared/
+│           └── common.v1.json       # GeoPoint, Polygon, Zone, Event (AMQP + REST)
 │
 ├── mobile-app/                      # ren HTML/JS, intet build-værktøj, ingen CSS
 │   ├── index.html                   # samtykke-knap
