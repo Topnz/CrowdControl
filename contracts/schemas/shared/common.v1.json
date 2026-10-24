@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/shared/common.v1.json",
+  "title": "Fælles typer",
+  "description": "Typer, der genbruges i event-beskeder og REST-kontrakter. Alle tidspunkter er ISO 8601 i UTC, fx \"2026-07-01T10:00:00Z\".",
+  "$defs": {
+    "GeoPoint": {
+      "type": "object",
+      "description": "Et punkt på kortet i WGS84 (samme som Geolocation API).",
+      "properties": {
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "required": ["latitude", "longitude"],
+      "additionalProperties": false
+    },
+    "Polygon": {
+      "type": "array",
+      "description": "Hjørnerne i et område i den rækkefølge, de er tegnet. Polygonen lukkes automatisk, så første hjørne gentages ikke til sidst.",
+      "items": { "$ref": "#/$defs/GeoPoint" },
+      "minItems": 3
+    },
+    "Zone": {
+      "type": "object",
+      "description": "Et delområde i et event. Kapacitet sendes ikke, da den kun bruges i processing-server.",
+      "properties": {
+        "zoneId": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "area": { "$ref": "#/$defs/Polygon" }
+      },
+      "required": ["zoneId", "name", "area"],
+      "additionalProperties": false
+    },
+    "Event": {
+      "type": "object",
+      "description": "Et event, som ingestion-server skal kende for at filtrere positioner.",
+      "properties": {
+        "eventId": { "type": "string", "format": "uuid" },
+        "name": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "sendIntervalSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Hvor ofte mobil-appen sender positionen."
+        },
+        "area": { "$ref": "#/$defs/Polygon" },
+        "zones": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Zone" }
+        }
+      },
+      "required": ["eventId", "name", "startTime", "endTime", "sendIntervalSeconds", "area", "zones"],
+      "additionalProperties": false
+    }
+  }
+}

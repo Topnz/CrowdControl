@@ -16,7 +16,10 @@ channels:
         $ref: '#/components/messages/PositionReceived'
   eventChanges:
     address: event-changes
-    description: Exchange med event-ændringer (C# -> Java).
+    description: |
+      Exchange med event-ændringer (C# -> Java). Routing key angiver beskedtypen:
+      `event.created`, `event.updated` og `event.deleted`. EventCreated og EventUpdated
+      indeholder hele eventet inkl. zoner, så ingestion-server blot erstatter sin kopi.
     messages:
       EventCreated:
         $ref: '#/components/messages/EventCreated'
@@ -50,16 +53,16 @@ components:
     PositionReceived:
       contentType: application/json
       payload:
-        $ref: '../schemas/PositionReceived.v1.json'
+        $ref: '../schemas/rabbitMQ/PositionReceived.v1.json'
     EventCreated:
       contentType: application/json
       payload:
-        $ref: '../schemas/EventCreated.v1.json'
+        $ref: '../schemas/rabbitMQ/EventCreated.v1.json'
     EventUpdated:
       contentType: application/json
       payload:
-        $ref: '../schemas/EventUpdated.v1.json'
+        $ref: '../schemas/rabbitMQ/EventUpdated.v1.json'
     EventDeleted:
       contentType: application/json
       payload:
-        $ref: '../schemas/EventDeleted.v1.json'
+        $ref: '../schemas/rabbitMQ/EventDeleted.v1.json'

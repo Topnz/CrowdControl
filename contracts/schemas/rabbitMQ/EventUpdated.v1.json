@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/rabbitMQ/EventUpdated.v1.json",
+  "title": "EventUpdated",
+  "description": "Et event eller en af dets zoner er ændret, oprettet eller slettet i processing-server (C# -> Java). Indeholder hele eventet inkl. den aktuelle zoneliste, som erstatter ingestion-serverens kopi.",
+  "$ref": "../shared/common.v1.json#/$defs/Event"
+}

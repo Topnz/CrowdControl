@@ -1,3 +1,5 @@
+package dk.crowdcontrol.ingestion.application;
+
 public class Test
 {
   //This is a test call :-)

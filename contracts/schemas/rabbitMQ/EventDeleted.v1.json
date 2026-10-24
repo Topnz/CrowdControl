@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/rabbitMQ/EventDeleted.v1.json",
+  "title": "EventDeleted",
+  "description": "Et event er slettet i processing-server (C# -> Java). Ingestion-server fjerner eventet og dets zoner.",
+  "type": "object",
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" }
+  },
+  "required": ["eventId"],
+  "additionalProperties": false
+}
