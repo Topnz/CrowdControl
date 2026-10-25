@@ -1,3 +1,4 @@
+using CrowdControl.Api.Hubs;
 using CrowdControl.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,8 @@ if (builder.Environment.IsEnvironment("Local"))
     builder.WebHost.UseStaticWebAssets();
 
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -25,6 +28,8 @@ if (app.Environment.IsDevelopment())
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
+app.MapControllers();
+app.MapHub<HeatmapHub>("/hubs/heatmap");
 app.MapFallbackToFile("index.html");
 
 app.Run();
