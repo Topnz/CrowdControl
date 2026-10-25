@@ -1,5 +1,6 @@
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
+using CrowdControl.Infrastructure.Messaging;
 using CrowdControl.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,6 +53,11 @@ Boundary Rectangle(double south, double north, double west, double east)
 builder.Services.AddSingleton(new GridAggregator(demoEvent));
 builder.Services.AddSingleton<LatestHeatmap>();
 builder.Services.AddHostedService<HeatmapBroadcaster>();
+builder.Services.AddSingleton<IReceivePositionUseCase, ReceivePositionService>();
+
+// Local kører uden RabbitMQ (fake-messaging kommer senere)
+if (!builder.Environment.IsEnvironment("Local"))
+    builder.Services.AddRabbitMqMessaging(builder.Configuration);
 
 var app = builder.Build();
 
