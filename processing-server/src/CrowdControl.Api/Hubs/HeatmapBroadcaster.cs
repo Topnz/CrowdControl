@@ -8,11 +8,13 @@ public class HeatmapBroadcaster : BackgroundService
 {
     private readonly GridAggregator _aggregator;
     private readonly IHubContext<HeatmapHub> _hub;
+    private readonly LatestHeatmap _latest;
 
-    public HeatmapBroadcaster(GridAggregator aggregator, IHubContext<HeatmapHub> hub)
+    public HeatmapBroadcaster(GridAggregator aggregator, IHubContext<HeatmapHub> hub, LatestHeatmap latest)
     {
         _aggregator = aggregator;
         _hub = hub;
+        _latest = latest;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -24,6 +26,7 @@ public class HeatmapBroadcaster : BackgroundService
 
             HeatmapSnapshotDto snapshotDto = _aggregator.GetSnapshot();
             _aggregator.Reset();
+            _latest.Snapshot = snapshotDto;
 
             await _hub.Clients.All.SendAsync("HeatmapUpdated", snapshotDto, stoppingToken);
         }

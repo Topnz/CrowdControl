@@ -1,4 +1,4 @@
-using CrowdControl.Application;
+using CrowdControl.Api.Hubs;
 using CrowdControl.Shared;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,16 +8,22 @@ namespace CrowdControl.Api.Controllers;
 [Route("heatmap")]
 public class HeatmapController : ControllerBase
 {
-    private readonly GridAggregator _aggregator;
+    private readonly LatestHeatmap _latest;
 
-    public HeatmapController(GridAggregator aggregator)
+    public HeatmapController(LatestHeatmap latest)
     {
-        _aggregator = aggregator;
+        _latest = latest;
     }
 
     [HttpGet]
-    public HeatmapSnapshotDto GetSnapshot()
+    public ActionResult<HeatmapSnapshotDto> GetSnapshot()
     {
-        return _aggregator.GetSnapshot();
+        // Intet snapshot før broadcasteren har kørt første gang (efter 3 sekunder)
+        if (_latest.Snapshot == null)
+        {
+            return NoContent();
+        }
+
+        return _latest.Snapshot;
     }
 }
