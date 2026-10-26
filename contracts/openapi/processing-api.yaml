@@ -33,9 +33,8 @@ paths:
 components:
   schemas:
     ActiveEvent:
-      type: object
-      description: TODO – ID, tidsrum og område
-      properties: {}
+      description: Kommende og aktive events inkl. zoner (samme form som EventCreated/EventUpdated).
+      $ref: '../schemas/shared/common.v1.json#/$defs/Event'
     HeatmapHistory:
       type: object
       description: TODO – felter aftales i holdet

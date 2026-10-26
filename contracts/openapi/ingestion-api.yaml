@@ -2,10 +2,35 @@ openapi: 3.1.0
 info:
   title: CrowdControl Ingestion API
   version: 0.1.0
-  description: Mobile app -> ingestion-server (Java).
+  description: |
+    Mobile app -> ingestion-server (Java).
+    Mobil-appen åbnes med eventets ID i URL'en (fx `/?event=<eventId>` via QR-kode eller link
+    fra arrangørens system) og sender det med i alle kald.
+    Alle tidspunkter er ISO 8601 i UTC.
 servers:
   - url: http://localhost:8080
 paths:
+  /events/{eventId}:
+    get:
+      summary: Hent sendeinterval og sluttid for et aktivt event
+      description: Kaldes af mobil-appen ved samtykke, så den ved, hvor ofte den skal sende, og hvornår den skal stoppe.
+      operationId: getEventInfo
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Eventet er kommende eller aktivt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInfo'
+        '404':
+          description: Eventet findes ikke eller er afsluttet
   /positions:
     post:
       summary: Modtag en anonym position fra mobil-appen
@@ -20,14 +45,59 @@ paths:
         '202':
           description: Positionen er modtaget og lagt i køen
         '400':
-          description: Ugyldig position
+          description: Ugyldig position (manglende eller ugyldige felter)
         '422':
-          description: Positionen ligger ikke inden for et aktivt event
+          description: Positionen ligger ikke inden for eventets område og tidsrum
         '429':
-          description: Rate limit overskredet
+          description: Rate limit overskredet for dette sessionId
 components:
   schemas:
+    EventInfo:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+          description: Mobil-appen stopper automatisk med at sende på dette tidspunkt.
+        sendIntervalSeconds:
+          type: integer
+          minimum: 1
+      required: [eventId, name, startTime, endTime, sendIntervalSeconds]
+      additionalProperties: false
     PositionRequest:
       type: object
-      description: TODO – felter aftales i holdet
-      properties: {}
+      description: Felterne svarer til `GeolocationPosition` fra browserens Geolocation API.
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: Tilfældigt ID genereret i browseren ved samtykke (`crypto.randomUUID()`), slettet ved stop.
+        eventId:
+          type: string
+          format: uuid
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        accuracy:
+          type: number
+          minimum: 0
+          description: Nøjagtighed i meter (`coords.accuracy`).
+        timestamp:
+          type: string
+          format: date-time
+          description: Hvornår positionen blev målt (`new Date(position.timestamp).toISOString()`).
+      required: [sessionId, eventId, latitude, longitude, accuracy, timestamp]
+      additionalProperties: false
