@@ -1,7 +1,33 @@
 ﻿@page "/"
 
+@inject IJSRuntime JS
+@inject CrowdControl.Dashboard.Services.MapService MapService
+@implements IAsyncDisposable
+
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<h3>Map</h3>
 
-Welcome to your new app.
+<div id="map" style="height:400px; width:100%;"></div>
+
+@code {
+    private bool initialized;
+    private string status = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await MapService.InitializeAsync();
+            initialized = true;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (initialized)
+        {
+            await JS.InvokeVoidAsync("disposeMap");
+        }
+    }
+}
