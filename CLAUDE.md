@@ -2,6 +2,9 @@
 
 Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projektet (SEP3). Den er skrevet til at ligge i repo-roden som `CLAUDE.md`, så Claude Code automatisk læser den.
 
+> **⚠ ÅBEN TODO – Claude skal nævne dette i sit første svar i hver session, indtil punktet er afkrydset:**
+> Dashboardet skal flyttes ud af `processing-server/` til sin egen mappe/solution `dashboard/` på niveau med `mobile-app/`. Den fulde plan står i **afsnit 9.1**. Fjern denne boks, når 9.1 er gennemført.
+
 ---
 
 ## 1. Systemet (fra C2-diagrammet)
@@ -495,6 +498,84 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [ ] Eksportér `docs/architecture/c2.png` igen fra den opdaterede `c2.drawio`.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
+- [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
+
+### 9.1 TODO: Flyt dashboardet ud af processing-server
+
+**Hvorfor.** Dashboardet er sin egen container i C2-diagrammet, men ligger i `CrowdControl.Processing.sln` og serveres af `Api`. Kontrakten mellem dashboard og Api er i dag C#-projektet `CrowdControl.Shared` (`CellDto`, `HeatmapSnapshotDto`, `ZoneCountDto`) og ikke `contracts/`. Det bryder reglen om, at kommunikation mellem containere starter i `contracts/` (afsnit 10). Når dashboardet flyttes ud, bliver REST- og SignalR-kontrakten eksplicit på samme måde som mellem Java og C#.
+
+**Beslutninger (truffet):**
+
+- **Intet domænelag i dashboardet.** Dashboardet er en klient. Forretningsregler (grid-aggregering, kapacitet, 90 %-tærskel, validering) bliver i processing-server, så der kun er én kilde til sandheden. Dashboardet får i stedet ports & adapters i lille skala: DTO'er, interfaces, UI-tilstand og fakes.
+- **Hosting: dashboardet bliver et selvstændigt statisk site** (egen dev-server lokalt, fx nginx i docker-compose senere). `Api` serverer **ikke** længere dashboardet og tilbyder kun REST + SignalR. Konsekvenser: CORS i `Api`, og login (ID-30) skal være token-baseret (JWT bearer). SignalR sender tokenet via `accessTokenFactory`. Alternativet (Api serverer det publicerede output via et kopi-trin, som Maven gør med `mobile-app/`) er fravalgt, fordi det kobler buildet sammen igen.
+- **`CrowdControl.Shared` nedlægges** (se nedenfor).
+
+**Plan for `CrowdControl.Shared`:**
+
+1. Beskriv de tre DTO'er som JSON-schemas i `contracts/` **før** noget flyttes: `contracts/schemas/signalr/HeatmapSnapshot.v1.json` (med `Cell` og `ZoneCount`), alternativt som en `dashboard`-kanal i `contracts/asyncapi/messaging.yaml`. REST-endpoints (`/history`, senere events/zoner/login/skift kodeord) beskrives i `contracts/openapi/processing-api.yaml`.
+2. **Application må ikke afhænge af DTO'er.** I dag refererer `CrowdControl.Application` til `Shared`, og `GridAggregator` bygger og returnerer `HeatmapSnapshotDto`/`CellDto`/`ZoneCountDto` (testene i `GridAggregatorTests` asserter på dem). Da `Application` ikke må referere `Api` (afhængighedsreglen), skal `GridAggregator` i stedet returnere egne modeltyper, fx `HeatmapSnapshot`, `GridCell`, `ZoneCount` i `CrowdControl.Application` (eller `Domain`). Det matcher `HeatmapSnapshot` i afsnit 6.3. `GridAggregatorTests` opdateres til de nye typer, og `using CrowdControl.Shared;` fjernes.
+3. **Serversiden:** flyt `CellDto`, `HeatmapSnapshotDto` og `ZoneCountDto` ind i `CrowdControl.Api/Contracts/` (namespace `CrowdControl.Api.Contracts`). Det er Api's response-typer og bruges af `HeatmapController`, `HeatmapBroadcaster` og `LatestHeatmap`. Api mapper fra Application-modellen til DTO'en (fx en `ToDto()`-extension i `Api/Contracts/`), før den sendes via SignalR/REST.
+4. **Klientsiden:** dashboardet får sine egne kopier i `CrowdControl.Dashboard.Core/Contracts/`, skrevet i hånden mod schemas/OpenAPI. Kodegenerering (NSwag/Kiota) overvejes, når API'et vokser.
+5. Slet projektet `CrowdControl.Shared` og fjern det fra `CrowdControl.Processing.sln`. Der må **ikke** være nogen project reference på tværs af `dashboard/` og `processing-server/`. Det er bevidst, at DTO'erne findes to steder: kontrakten i `contracts/` er det, der holder dem i sync.
+
+**Målstruktur:**
+
+```
+dashboard/
+├── CrowdControl.Dashboard.sln
+├── src/
+│   ├── CrowdControl.Dashboard.Core/      # ingen Blazor/SignalR-afhængigheder
+│   │   ├── Contracts/   # DTO'er jf. contracts/
+│   │   ├── Ports/       # IHeatmapFeed, IEventsApi, IZonesApi, IHistoryApi, IAuthApi
+│   │   └── State/       # UI-tilstand og ren UI-logik (farveskala, "tæt på kapacitet"-visning, afspilningstidslinje)
+│   ├── CrowdControl.Dashboard.Adapters/  # SignalRHeatmapFeed, Http*Api, Fake* (tilfældige data)
+│   │                                     # (deles i .SignalR/.Http/.Fakes, hvis det vokser)
+│   └── CrowdControl.Dashboard/           # Blazor WASM: Pages, Layout, Components, wwwroot (map.js, lib/bootstrap)
+│                                         # Program.cs = composition root (Fake vs. rigtig adapter efter miljø)
+└── tests/
+    └── CrowdControl.Dashboard.Tests/     # Core-tests + bUnit-komponenttests
+```
+
+Afhængighedsreglen: `Core ← Adapters ← Dashboard`, håndhævet med project references. Adapters skal kunne køre i WebAssembly (ingen serverbiblioteker).
+
+**Pakker og referencer, der skal fjernes/flyttes** (status pr. 2026-10-27; tjek csproj-filerne igen før flytningen):
+
+| Projekt | Fjern | Behold / tilføj |
+|---|---|---|
+| `processing-server/…/CrowdControl.Api.csproj` | `ProjectReference` til `CrowdControl.Dashboard` og `CrowdControl.Shared`; `PackageReference` `Microsoft.AspNetCore.Components.WebAssembly.Server` (bruges kun til at servere WASM) | Behold `Microsoft.EntityFrameworkCore.Design` (dotnet-ef). Tilføj senere `Microsoft.AspNetCore.Authentication.JwtBearer` (ID-30). CORS og SignalR-server er en del af `Microsoft.NET.Sdk.Web`, så de kræver ingen pakke. |
+| `processing-server/…/CrowdControl.Application.csproj` | `ProjectReference` til `CrowdControl.Shared` | Kun `Domain` (afhængighedsreglen). |
+| `processing-server/…/CrowdControl.Shared` | Hele projektet, også fra `CrowdControl.Processing.sln` | – |
+| `processing-server/…/CrowdControl.Dashboard` | Hele projektet fra processing-server (flyttes) | – |
+| `processing-server/tests/CrowdControl.Application.Tests` | `using CrowdControl.Shared;` i `GridAggregatorTests.cs` | Refererer kun `Application`. |
+| `processing-server/tests/CrowdControl.Api.IntegrationTests` | – (refererer `Api`, som ikke længere trækker Dashboard/Shared med transitivt) | Tjek at den stadig bygger uden de transitive referencer. |
+| `dashboard/…/CrowdControl.Dashboard` (WASM) | `Blazor.Bootstrap` 4.0.0. Den bruges ikke i nogen `.razor`-fil; styling sker med den lokale `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css`. Fjern den, hvis den stadig er ubrugt, ellers flyt den med. `ProjectReference` til `Shared`. | `Microsoft.AspNetCore.Components.WebAssembly`, `…WebAssembly.DevServer` (PrivateAssets=all). `ProjectReference` til `Dashboard.Adapters` og `Dashboard.Core`. `Microsoft.AspNetCore.SignalR.Client` flyttes **ikke** hertil, kun til Adapters. |
+| `dashboard/…/CrowdControl.Dashboard.Core` | – | **Ingen pakker** (ingen Blazor, SignalR eller Http-klientbiblioteker). Ren `Microsoft.NET.Sdk` classlib. |
+| `dashboard/…/CrowdControl.Dashboard.Adapters` | – | `Microsoft.AspNetCore.SignalR.Client` (flyttet fra WASM-projektet), `Microsoft.Extensions.DependencyInjection.Abstractions` (til `AddSignalRAdapters()`/`AddFakeAdapters()`-extensions). `ProjectReference` til `Core`. Evt. `System.Net.Http.Json` er allerede i BCL. |
+| `dashboard/tests/CrowdControl.Dashboard.Tests` | – | xUnit-pakkerne som i processing-servers testprojekter (`Microsoft.NET.Test.Sdk`, `xunit`, `xunit.runner.visualstudio`, `coverlet.collector`) + `bunit` til komponenttests. |
+
+Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de to solutions ikke glider fra hinanden. Overvej en `Directory.Packages.props` (central package management) i hver solution.
+
+Øvrige filer/indstillinger, der hører til dashboardet og skal med eller ryddes op:
+
+- `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css`: flyttes med. `.gitignore`-noten i afsnit 8 (`dist/` må ikke ignoreres) gælder fortsat, men for den nye sti.
+- `Properties/launchSettings.json`: følger med dashboardet (port 5111). I `Api`'s `launchSettings.json` skal `inspectUri` (WASM-debugging) fjernes, hvis den findes.
+- `.github/workflows/processing-server.yml` bygger hele solutionen og dermed i dag også dashboardet. Efter flytningen bygger den kun serveren; dashboardet får sin egen workflow (trin 8).
+
+**Trin:**
+
+- [ ] 1. Kontrakter: schemas for heatmap-snapshot (SignalR) og `/history` i `contracts/` (jf. ovenfor).
+- [ ] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR.
+- [ ] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1).
+- [ ] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`.
+- [ ] 4. `Services/MapServise.cs` (stavefejl, klassen hedder `MapService`) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.
+- [ ] 5. **API-adresse:** i dag bruger dashboardet sin egen origin (`HttpClient.BaseAddress = HostEnvironment.BaseAddress` og `NavigationManager.ToAbsoluteUri("/hubs/heatmap")`). Det virker ikke længere, når dashboardet har sin egen origin. Indfør `ApiBaseUrl` i `wwwroot/appsettings.json` / `appsettings.Local.json` (Api'et kører på `http://localhost:5262`) og byg HttpClient- og hub-URL ud fra den.
+- [ ] 6. Processing-server: fjern projekter, pakker og referencer jf. tabellen ovenfor, og fjern `UseStaticWebAssets()` (Local), `UseWebAssemblyDebugging()`, `UseBlazorFrameworkFiles()`, `UseStaticFiles()` og `MapFallbackToFile("index.html")` fra `Program.cs`. Tilføj en CORS-policy for dashboardets origin (konfigurerbar; SignalR kræver `AllowCredentials` + eksplicit origin).
+- [ ] 7. Login (ID-30/31/32), når det implementeres: JWT bearer i Api; dashboardet gemmer tokenet og sender det i `Authorization`-headeren og via `accessTokenFactory` til SignalR. Hub og controllers får `[Authorize]`.
+- [ ] 8. CI: ny `.github/workflows/dashboard.yml` med path-filter `dashboard/**` + `contracts/**`. Fjern dashboard-delen fra `processing-server.yml`, hvis den har nogen.
+- [ ] 9. Kørsel: Rider-compound-konfiguration (i `.run/`) der starter Api + Dashboard sammen. Dashboardet åbnes på sin egen port (i dag 5111), ikke via Api'ets 5262.
+- [ ] 10. Docker (valgfrit, senere): `dashboard`-service i `docker-compose.yml`, der serverer `dotnet publish`-output statisk.
+- [ ] 11. Opdatér dokumentationen: C2-diagrammet (`c2.drawio` → `c2.png`: dashboardet serveres ikke længere af processing-server), og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
+- [ ] 12. Verificér: `dotnet build` + `dotnet test` grøn i både `processing-server/` og `dashboard/`; live heatmap virker end-to-end (Api + dashboard) og med fake-feed alene.
 
 ---
 
