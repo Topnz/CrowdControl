@@ -1,0 +1,144 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Ingestion – offline",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/ingestion-server",
+      "command": "./mvnw -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=offline'",
+      "windows": {
+        "command": ".\\mvnw.cmd -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=offline'"
+      }
+    },
+    {
+      "name": "Ingestion – lokal",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/ingestion-server",
+      "command": "./mvnw -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lokal'",
+      "windows": {
+        "command": ".\\mvnw.cmd -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lokal'"
+      },
+      "preLaunchTask": "docker compose up"
+    },
+    {
+      "name": "Ingestion – LAN",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/ingestion-server",
+      "command": "./mvnw -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lan'",
+      "windows": {
+        "command": ".\\mvnw.cmd -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lan'"
+      },
+      "preLaunchTask": "docker compose up"
+    },
+    {
+      "name": "Api – offline",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build api",
+      "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
+      "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
+      "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "offline",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Api – lokal",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "docker compose up + build api",
+      "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
+      "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
+      "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "lokal",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Api – LAN",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "docker compose up + build api",
+      "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
+      "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
+      "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "lan",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Ingestion – lokal (uden docker)",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/ingestion-server",
+      "command": "./mvnw -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lokal'",
+      "windows": {
+        "command": ".\\mvnw.cmd -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lokal'"
+      },
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Ingestion – LAN (uden docker)",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/ingestion-server",
+      "command": "./mvnw -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lan'",
+      "windows": {
+        "command": ".\\mvnw.cmd -pl bootstrap -am spring-boot:run '-Dspring-boot.run.profiles=lan'"
+      },
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Api – lokal (uden docker)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build api",
+      "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
+      "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
+      "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "lokal",
+      "console": "integratedTerminal",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Api – LAN (uden docker)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build api",
+      "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
+      "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
+      "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
+      "launchSettingsProfile": "lan",
+      "console": "integratedTerminal",
+      "presentation": {
+        "hidden": true
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Alt – lokal",
+      "preLaunchTask": "docker compose up",
+      "stopAll": true,
+      "configurations": [
+        "Ingestion – lokal (uden docker)",
+        "Api – lokal (uden docker)"
+      ]
+    },
+    {
+      "name": "Alt – LAN",
+      "preLaunchTask": "docker compose up",
+      "stopAll": true,
+      "configurations": [
+        "Ingestion – LAN (uden docker)",
+        "Api – LAN (uden docker)"
+      ]
+    }
+  ]
+}

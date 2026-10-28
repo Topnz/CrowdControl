@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Sender godkendte positioner som JSON til positions-køen, hvor processing-server henter dem.
- * Modstykket til LoggingPositionPublisher, som bruges med profilen "local".
+ * Modstykket til LoggingPositionPublisher, som bruges med profilen "offline".
  */
 @Component
-@Profile("!local")
+@Profile("!offline")
 public class RabbitPositionPublisher implements PositionPublisher
 {
   private final AmqpTemplate amqpTemplate;

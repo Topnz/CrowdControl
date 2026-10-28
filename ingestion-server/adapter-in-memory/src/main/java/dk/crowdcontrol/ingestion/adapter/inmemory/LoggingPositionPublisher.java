@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Skriver godkendte positioner til loggen i stedet for at sende dem til RabbitMQ.
- * Kun med profilen "local", så Java kan køre uden RabbitMQ og processing-server.
+ * Kun med profilen "offline", så Java kan køre uden RabbitMQ og processing-server.
  */
 @Component
-@Profile("local")
+@Profile("offline")
 public class LoggingPositionPublisher implements PositionPublisher
 {
   private static final Logger log = LoggerFactory.getLogger(LoggingPositionPublisher.class);

@@ -191,6 +191,7 @@ CrowdControl/
 
 Java-adapterne ligger fladt med `adapter-`-præfiks (ikke i en `adapters/`-undermappe). Det er nemmere i IntelliJ, og de sorteres sammen alfabetisk.
 
+
 ---
 
 ## 4. IDE-opsætning
@@ -199,6 +200,21 @@ Java-adapterne ligger fladt med `adapter-`-præfiks (ikke i en `adapters/`-under
 - `ingestion-server/` er tilføjet via **File → New → Module → Spring Boot** (Maven, Java 21, JDK liberica-21, groupId `dk.crowdcontrol`).
 - IntelliJ kan ikke arbejde ordentligt med C#. `processing-server/` åbnes i **Rider** (`CrowdControl.Processing.sln`). Begge IDE'er peger på samme repo.
 - Udviklingsmiljøet er Windows. Maven køres med `.\mvnw.cmd` fra `ingestion-server/`.
+
+### 4.1 Kørsel (fælles run-konfigurationer)
+
+Alle har de samme konfigurationer ved den grønne startknap. De ligger i git og må ikke laves lokalt i stedet (detaljer og fejlfinding i `README.md`).
+
+| Tilstand | Ingestion (Spring-profil) | Api (launch-profil → miljø) | Docker compose |
+|---|---|---|---|
+| `offline` | `offline`: in-memory fakes, ingen RabbitMQ/PostGIS | `offline` → `Offline`: ingen RabbitMQ (main-db bruges stadig til migrationer) | Nej |
+| `lokal` | `lokal`: rigtig infrastruktur, binder kun til `127.0.0.1` | `lokal` → `Development`, `localhost:5262` | Ja, startes før |
+| `LAN` | `lan`: starter en Cloudflare quick tunnel (`cloudflared`) og printer et offentligt HTTPS-link. HTTPS er krævet af Geolocation API | `lan` → `Development`, `0.0.0.0:5262`, printer et link pr. LAN-IP | Ja, startes før |
+
+- **IntelliJ:** `.run/` i roden (`Infrastructure (docker compose)`, `Ingestion – offline/lokal/LAN` som Maven-konfigurationer med `-pl bootstrap -am spring-boot:run`; `-am`, så søskendemoduler bygges med i stedet for at blive hentet fra `~/.m2`).
+- **Rider:** `processing-server/.run/` (`Api – offline/lokal/LAN`). `launchSettings.json` indeholder kun de tre profiler; der må ikke tilføjes `http`/`https`-profiler.
+- **VS Code:** `.vscode/launch.json` + `tasks.json` (de eneste filer i `.vscode/`, der er i git). Compounds `Alt – lokal` og `Alt – LAN` starter ingestion og Api sammen.
+- Links printes ved opstart af `bootstrap/…/startup/` (Java) og `Api/StartupLinks.cs` (C#). Nye applikationer skal også printe deres link.
 
 ---
 
@@ -363,15 +379,15 @@ Profiler afgør, hvilken implementering der bruges:
 
 ```java
 // adapter-rabbit-out
-@Component @Profile("!local")
+@Component @Profile("!offline")
 class RabbitPositionPublisher implements PositionPublisher { ... }
 
 // adapter-in-memory
-@Component @Profile("local")
+@Component @Profile("offline")
 class LoggingPositionPublisher implements PositionPublisher { ... }
 ```
 
-Med `--spring.profiles.active=local` skal Java-serveren kunne køre helt uden RabbitMQ, PostGIS og C#-serveren. Bemærk: `local`-profilen skal også slå DataSource- og Flyway-autokonfiguration fra (fx via `spring.autoconfigure.exclude` i `application-local.properties`), ellers forsøger Boot at forbinde til databasen ved opstart. Tjek de præcise klassenavne for Spring Boot 4, da autokonfigurationerne er flyttet til nye pakker.
+Med `--spring.profiles.active=offline` skal Java-serveren kunne køre helt uden RabbitMQ, PostGIS og C#-serveren. Bemærk: `offline`-profilen skal også slå DataSource- og Flyway-autokonfiguration fra (fx via `spring.autoconfigure.exclude` i `application-offline.properties`), ellers forsøger Boot at forbinde til databasen ved opstart. Tjek de præcise klassenavne for Spring Boot 4, da autokonfigurationerne er flyttet til nye pakker.
 
 ---
 
@@ -433,7 +449,7 @@ public interface IEventPublisher  { Task PublishAsync(EventChanged e, Cancellati
 builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 
-if (builder.Environment.IsEnvironment("Local"))
+if (builder.Environment.IsEnvironment("Offline"))
     builder.Services.AddFakeMessaging();      // genererer syntetiske positioner
 else
     builder.Services.AddRabbitMqMessaging(builder.Configuration);
@@ -460,10 +476,13 @@ Arkitekturtests kan tilføjes med NetArchTest (C#) og ArchUnit (Java).
 ## 8. Root `.gitignore`
 
 ```
-.idea/  *.iml  .vs/  .vscode/  *.user  *.DotSettings.user
+.idea/  *.iml  .vs/  .vscode/*  *.user  *.DotSettings.user
+!.vscode/launch.json  !.vscode/tasks.json  !.vscode/extensions.json
 target/  bin/  obj/  TestResults/  node_modules/
 .env
 ```
+
+`.run/` (begge steder) og de tre `.vscode/`-filer skal være i git (afsnit 4.1).
 
 Bemærk: `dist/` må **ikke** ignoreres, da Dashboardet bruger `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css` (kun den fil er beholdt fra Blazor-skabelonen).
 
@@ -482,14 +501,15 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 
 - [x] `ingestion-server/pom.xml` omskrevet til parent-pom (afsnit 5.1); de ni moduler oprettet med dependencies jf. afsnit 5.2.
 - [x] `IngestionServerApplication` flyttet til `bootstrap/` i pakken `dk.crowdcontrol.ingestion`; tomme pakker lagt jf. afsnit 5.3.
-- [x] `local`-profil (`bootstrap/src/main/resources/application-local.properties`) slår DataSource-, JDBC-, Flyway- og Rabbit-autokonfiguration fra. `contextLoads()` kører med `@ActiveProfiles("local")`.
+- [x] `offline`-profil (`bootstrap/src/main/resources/application-offline.properties`, hed tidligere `local`) slår DataSource-, JDBC-, Flyway- og Rabbit-autokonfiguration fra. `contextLoads()` kører med `@ActiveProfiles("offline")`.
 - [x] `.\mvnw.cmd clean verify` er grøn. Root `.gitignore` er oprettet, og første commit er lavet på `main`.
-- [x] `processing-server/` oprettet jf. afsnit 6 (`dotnet new sln --format sln`, da .NET 10 ellers laver `.slnx`). `Api` serverer Dashboard; launch-profilen `local` sætter miljøet `Local`. `dotnet build` + `dotnet test` er grønne.
+- [x] `processing-server/` oprettet jf. afsnit 6 (`dotnet new sln --format sln`, da .NET 10 ellers laver `.slnx`). `Api` serverer Dashboard; launch-profilen `offline` sætter miljøet `Offline` (hed tidligere `local`/`Local`). `dotnet build` + `dotnet test` er grønne.
 - [x] `contracts/` med skabeloner: OpenAPI (`POST /positions`, `GET /events/active`, `GET /history`), AsyncAPI (`positions`-kø, `event-changes`-exchange) og JSON-schemas uden felter.
 - [x] `docker-compose.yml`: RabbitMQ (5672, UI 15672), main-db (5432, `maindb`), event-db PostGIS (5433, `eventdb`). Bruger/password: `crowdcontrol`. Forbindelserne står i Java `application.properties` og C# `appsettings.json`.
 - [x] `mobile-app/` (afsnit 7).
-- [x] EF Core i `Infrastructure.Persistence`: Npgsql-provider, snake_case-navne, tom `MainDbContext`, `AddPersistence(IConfiguration)` og `Configurations/` til `IEntityTypeConfiguration<T>`. `Api` kører `Database.Migrate()` ved opstart i Development/Local. `dotnet-ef` er lokalt værktøj (`processing-server/dotnet-tools.json`; kør `dotnet tool restore`). Ny migration: `dotnet dotnet-ef migrations add <Navn> --project src/CrowdControl.Infrastructure.Persistence --startup-project src/CrowdControl.Api`.
+- [x] EF Core i `Infrastructure.Persistence`: Npgsql-provider, snake_case-navne, tom `MainDbContext`, `AddPersistence(IConfiguration)` og `Configurations/` til `IEntityTypeConfiguration<T>`. `Api` kører `Database.Migrate()` ved opstart i Development/Offline. `dotnet-ef` er lokalt værktøj (`processing-server/dotnet-tools.json`; kør `dotnet tool restore`). Ny migration: `dotnet dotnet-ef migrations add <Navn> --project src/CrowdControl.Infrastructure.Persistence --startup-project src/CrowdControl.Api`.
 - [x] CI: `.github/workflows/ingestion-server.yml` og `processing-server.yml` (GitHub Actions) med path-filtre; `contracts/**` trigger begge. `mvnw` er markeret eksekverbar i git.
+- [x] Fælles run-konfigurationer for IntelliJ, Rider og VS Code med tilstandene `offline`, `lokal` og `LAN` (afsnit 4.1). Spring-profilen `local` og C#-miljøet `Local` er omdøbt til `offline`/`Offline`. Kørselsvejledning i `README.md`.
 
 **Næste skridt**
 
@@ -558,7 +578,7 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 Øvrige filer/indstillinger, der hører til dashboardet og skal med eller ryddes op:
 
 - `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css`: flyttes med. `.gitignore`-noten i afsnit 8 (`dist/` må ikke ignoreres) gælder fortsat, men for den nye sti.
-- `Properties/launchSettings.json`: følger med dashboardet (port 5111). I `Api`'s `launchSettings.json` skal `inspectUri` (WASM-debugging) fjernes, hvis den findes.
+- `Properties/launchSettings.json`: dashboardets egen (port 5111) er slettet, så dashboardet kun startes via Api'et, indtil det flyttes. Ved flytningen laves en ny med profilerne `offline`/`lokal`/`lan` og tilsvarende `Dashboard – …`-konfigurationer (afsnit 4.1). I `Api`'s `launchSettings.json` skal `inspectUri` (WASM-debugging) fjernes, hvis den findes.
 - `.github/workflows/processing-server.yml` bygger hele solutionen og dermed i dag også dashboardet. Efter flytningen bygger den kun serveren; dashboardet får sin egen workflow (trin 8).
 
 **Trin:**
@@ -568,11 +588,11 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - [ ] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1).
 - [ ] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`.
 - [ ] 4. `Services/MapServise.cs` (stavefejl, klassen hedder `MapService`) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.
-- [ ] 5. **API-adresse:** i dag bruger dashboardet sin egen origin (`HttpClient.BaseAddress = HostEnvironment.BaseAddress` og `NavigationManager.ToAbsoluteUri("/hubs/heatmap")`). Det virker ikke længere, når dashboardet har sin egen origin. Indfør `ApiBaseUrl` i `wwwroot/appsettings.json` / `appsettings.Local.json` (Api'et kører på `http://localhost:5262`) og byg HttpClient- og hub-URL ud fra den.
-- [ ] 6. Processing-server: fjern projekter, pakker og referencer jf. tabellen ovenfor, og fjern `UseStaticWebAssets()` (Local), `UseWebAssemblyDebugging()`, `UseBlazorFrameworkFiles()`, `UseStaticFiles()` og `MapFallbackToFile("index.html")` fra `Program.cs`. Tilføj en CORS-policy for dashboardets origin (konfigurerbar; SignalR kræver `AllowCredentials` + eksplicit origin).
+- [ ] 5. **API-adresse:** i dag bruger dashboardet sin egen origin (`HttpClient.BaseAddress = HostEnvironment.BaseAddress` og `NavigationManager.ToAbsoluteUri("/hubs/heatmap")`). Det virker ikke længere, når dashboardet har sin egen origin. Indfør `ApiBaseUrl` i `wwwroot/appsettings.json` / `appsettings.Offline.json` (Api'et kører på `http://localhost:5262`) og byg HttpClient- og hub-URL ud fra den.
+- [ ] 6. Processing-server: fjern projekter, pakker og referencer jf. tabellen ovenfor, og fjern `UseStaticWebAssets()` (Offline), `UseWebAssemblyDebugging()`, `UseBlazorFrameworkFiles()`, `UseStaticFiles()` og `MapFallbackToFile("index.html")` fra `Program.cs`. Tilføj en CORS-policy for dashboardets origin (konfigurerbar; SignalR kræver `AllowCredentials` + eksplicit origin).
 - [ ] 7. Login (ID-30/31/32), når det implementeres: JWT bearer i Api; dashboardet gemmer tokenet og sender det i `Authorization`-headeren og via `accessTokenFactory` til SignalR. Hub og controllers får `[Authorize]`.
 - [ ] 8. CI: ny `.github/workflows/dashboard.yml` med path-filter `dashboard/**` + `contracts/**`. Fjern dashboard-delen fra `processing-server.yml`, hvis den har nogen.
-- [ ] 9. Kørsel: Rider-compound-konfiguration (i `.run/`) der starter Api + Dashboard sammen. Dashboardet åbnes på sin egen port (i dag 5111), ikke via Api'ets 5262.
+- [ ] 9. Kørsel: `Dashboard – offline/lokal/LAN` i alle tre IDE'er jf. afsnit 4.1 (Rider i `processing-server/.run/` eller `dashboard/.run/`, VS Code i `.vscode/launch.json` inkl. compounds). Dashboardet printer sit eget link; Api'et printer så kun API-adressen.
 - [ ] 10. Docker (valgfrit, senere): `dashboard`-service i `docker-compose.yml`, der serverer `dotnet publish`-output statisk.
 - [ ] 11. Opdatér dokumentationen: C2-diagrammet (`c2.drawio` → `c2.png`: dashboardet serveres ikke længere af processing-server), og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
 - [ ] 12. Verificér: `dotnet build` + `dotnet test` grøn i både `processing-server/` og `dashboard/`; live heatmap virker end-to-end (Api + dashboard) og med fake-feed alene.
