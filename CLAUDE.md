@@ -4,6 +4,7 @@ Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projekt
 
 > **⚠ ÅBEN TODO – Claude skal nævne dette i sit første svar i hver session, indtil punktet er afkrydset:**
 > Dashboardet skal flyttes ud af `processing-server/` til sin egen mappe/solution `dashboard/` på niveau med `mobile-app/`. Den fulde plan står i **afsnit 9.1**. Fjern denne boks, når 9.1 er gennemført.
+> **Status 2026-10-28:** the move itself is done and on `main` (PR #19, #25). What remains is **PR 3b** (split the dashboard into Core/Adapters/UI) and **PR 4** (documentation). The step-by-step plan with reasons is in **section 9.2**.
 
 ---
 
@@ -618,6 +619,80 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - [ ] 10. Docker (valgfrit, senere): `dashboard`-service i `docker-compose.yml`, der serverer `dotnet publish`-output statisk.
 - [ ] 11. Opdatér dokumentationen: C2, C3 og C4 i `docs/architecture/design/` (dashboardet serveres ikke længere af processing-server, `CrowdControl.Shared` udgår, `GridAggregator` returnerer egne modeltyper) og `klassediagram/klassediagram-system.puml`, og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
 - [ ] 12. Verificér: `dotnet build` + `dotnet test` grøn i både `processing-server/` og `dashboard/`; live heatmap virker end-to-end (Api + dashboard) og med fake-feed alene.
+
+
+### 9.2 Remaining work: PR 3b and PR 4 (plan agreed 2026-10-28)
+
+**Status:** PR 1 (contract, #19), PR 2 (decouple `Application` from `Shared`) and PR 3a (move to `dashboard/`) are on `main`. PR 2 and 3a landed via #25 (see the lesson below). The dashboard runs standalone on port 5111, and the Api (5262) serves REST + SignalR only.
+
+**Open decision before 3b:** should `Dashboard – offline` use the fake feed (recommended, so the dashboard runs without the Api and docker) or keep calling the Api in `Offline`? The steps below assume the fake feed.
+
+**Lesson about stacked PRs:** #22 and #23 were stacked (`main ← #19 ← #22 ← #23`) and merged within 30 seconds. They went into their already-merged base branches instead of `main`, and #25 had to land them. Avoid stacked PRs. If you use them anyway, merge bottom-up, delete each branch before merging the next, and check that the next PR's base says `main`.
+
+#### PR 3b – split the dashboard into layers (branch from `main`, e.g. `refactor/dashboard-layers`)
+
+Goal: the UI only knows an abstraction for live data. The real SignalR connection and a fake can be swapped by configuration.
+
+1. **Create `CrowdControl.Dashboard.Core`** (plain `Microsoft.NET.Sdk` classlib, **no packages**) and move the DTOs from `Dashboard/Contracts/` to `Core/Contracts/`.
+   *Why:* the contract and UI logic must be usable and testable without Blazor, SignalR or HTTP. With no packages in the csproj, nobody can accidentally pull in a framework. This is the same principle as `Domain`/`Application`.
+2. **Define the port `IHeatmapFeed` in `Core/Ports/`** (an event or callback for new snapshots, plus `StartAsync`/`DisposeAsync`).
+   *Why:* today `MapService` creates its own `HubConnection`, so the UI is locked to SignalR and a running Api. With a port, the UI depends on *what* it gets, not *how* (Dependency Inversion, section 2). This is what makes a fake possible.
+3. **Create `CrowdControl.Dashboard.Adapters`** (package `Microsoft.AspNetCore.SignalR.Client`, references `Core`) with:
+   - `SignalRHeatmapFeed`: the hub code from `MapService`, moved unchanged.
+   - `FakeHeatmapFeed`: a random snapshot every 3 seconds, with cells around a fixed point and a few zones (one with `capacity: null`, one close to 90 %).
+   - `ApiAddress`, moved from `Services/`.
+   - The extensions `AddSignalRAdapters()` / `AddFakeAdapters()`.
+
+   *Why:* all network code lives in one place, and the UI project does not know SignalR. The fake data covers the cases the UI must handle before events and zones exist in the Api. `ApiAddress` only matters for the real adapter. The extensions keep `Program.cs` thin, like `AddPersistence` in processing-server.
+4. **Make `MapService` thin:** it keeps the JS interop (`initMap`, `renderHeatmap`) and subscribes to `IHeatmapFeed`.
+   *Why:* the map (Leaflet via JS) is Blazor-specific and belongs in the UI project. Only the data source should be swappable.
+5. **`Program.cs` picks the adapter by environment:** `Offline` uses `AddFakeAdapters()`, everything else uses `AddSignalRAdapters()`.
+   *Why:* `Dashboard – offline` then runs without the Api and docker, so the UI can be built on its own. Section 10 requires every port to have a fake.
+6. **References are `Core ← Adapters ← Dashboard`.** Remove `SignalR.Client` from the WASM project.
+   *Why:* the compiler then enforces that the UI cannot use SignalR directly and that Core knows no adapter.
+7. **Tests (`CrowdControl.Dashboard.Tests`):** point the contract test at `Core`, and add a test that `FakeHeatmapFeed`'s snapshots validate against `HeatmapSnapshot.v1.json`.
+   *Why:* the fake must follow the contract, otherwise offline mode shows data the real Api never sends. bUnit waits until components have logic of their own.
+8. **Do not create `State/` yet.**
+   *Why:* there is no UI logic to put there today. It comes with zone counts, the 90 % notification and history playback (ID-36, ID-38).
+9. **Clean-up:** remove the unused `status` field in `Home.razor` (the dashboard's only build warning). New comments are in English.
+10. **Verify:**
+    - `dotnet build` + `dotnet test` in `dashboard/`.
+    - `Dashboard – offline` alone shows dots from the fake.
+    - `Api – lokal` + `Dashboard – lokal` uses the real feed.
+    - There are no references across `dashboard/` and `processing-server/`.
+    - Stop any servers you started.
+11. **Docs:** tick steps 2 and 4 in 9.1. Update README (`Dashboard – offline` no longer needs the Api). Open a PR to `main`.
+
+#### PR 4 – documentation (after 3b)
+
+Goal: CLAUDE.md, README and the diagrams describe the architecture that actually exists.
+
+1. **Section 1:**
+   - The container table describes the dashboard as a standalone static site, and processing-server no longer serves it.
+   - The communication table drops "Dashboard → Processing-server: Henter statisk indhold".
+
+   *Why:* these tables are the first thing anyone reads.
+2. **Section 3 (repo structure):** add the `dashboard/` tree (Core, Adapters, WASM, tests, `.run/`), and remove `Dashboard`/`Shared` from processing-server.
+   *Why:* the structure is used to decide where new code goes.
+3. **Sections 6.1–6.3:**
+   - Remove the `dotnet new` and reference commands for Dashboard/`Shared`.
+   - Remove "For at `Api` kan servere dashboardet".
+   - Point `IHeatmapFeed` to `dashboard/`.
+
+   *Why:* following the old commands would recreate the coupling.
+4. **Sections 8 and 10:** the new path to `bootstrap.min.css` in the `dist/` note, and "run `dotnet build` + `dotnet test` in both `processing-server/` and `dashboard/`".
+   *Why:* section 10 is the checklist after every change.
+5. **Diagrams in `docs/architecture/design/`:**
+   - `c2-containere.drawio`: "Serverer i dag dashboardet" / "statisk indhold".
+   - `c3-processing-server.drawio`: "Serverer dashboardets statiske filer" and `Shared`.
+   - `c3-dashboard.drawio`: Core/Adapters/UI.
+   - C4 and `klassediagram-system.puml`: `MonitorEvent`, `HeatmapSnapshot`/`GridCell`/`ZoneCount`, `int?` capacity.
+
+   *Why:* the diagrams were made in #24 just before the move. Bigger layout changes are best done in draw.io by whoever drew them.
+6. **Section 9.1:** tick steps 11 and 12, remove the ⚠ box at the top, and shorten 9.1/9.2 to a brief summary.
+   *Why:* once the move is finished, this is history and takes up space in a file that is read at the start of every session.
+7. **README:** write the "Kør projektet" section fully in English (it is half Danish after 3a).
+8. **Verify** that every path and file name mentioned in CLAUDE.md and README exists, then open a PR to `main`.
 
 ---
 
