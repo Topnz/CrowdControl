@@ -2,6 +2,17 @@
 
 Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projektet (SEP3). Den er skrevet til at ligge i repo-roden som `CLAUDE.md`, så Claude Code automatisk læser den.
 
+> **Next session – start here (written 2026-10-28). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
+>
+> 1. **Merge PR #27** (`docs/dashboard-move`, the documentation for the dashboard move). First open `docs/architecture/design/klassediagram/klassediagram-system.puml` in the PlantUML preview; it has not been rendered. Then merge, delete the branch, and run `git checkout main && git pull`.
+> 2. **Move main-db off port 5432** (see "Næste skridt" in section 9). Small separate PR. Until then, the Windows service `postgresql-x64-18` is stopped and set to Manual on this machine, so it stays off after a reboot.
+> 3. **Pick the next feature:**
+>    - Agree on the fields in `contracts/`, including the send interval and end time for the mobile app. This blocks events and zones in the Api.
+>    - Small dashboard fixes from 9.1: `map.fitBounds` on the first snapshot, and a status message instead of a crash when the Api is down.
+>    - Central package management (`Directory.Packages.props`).
+>
+> Machine state: the .NET 10 SDK, Docker Desktop and `gh` (logged in as iMannys) are installed. Docker's `bin` folder may be missing from the PATH of an older terminal; restart the terminal or IDE.
+
 ---
 
 ## 1. Systemet (fra C2-diagrammet)
