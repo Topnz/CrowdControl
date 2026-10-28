@@ -12,7 +12,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHeatmapFeed(this IServiceCollection services, ApiAddress api, Func<IServiceProvider, bool> useFake)
     {
         services.AddSingleton(api);
-        services.AddScoped<IHeatmapFeed>(sp => useFake(sp) ? new FakeHeatmapFeed() : new SignalRHeatmapFeed(api));
+        services.AddScoped<IHeatmapFeed>(serviceProvider => useFake(serviceProvider) ? new FakeHeatmapFeed() : new SignalRHeatmapFeed(api));
         return services;
     }
 }
