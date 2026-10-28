@@ -1,6 +1,6 @@
 # CrowdControl
 
-Live heatmap over, hvor deltagerne befinder sig til et event. Arkitektur og beslutninger står i [`CLAUDE.md`](CLAUDE.md).
+A live heatmap of where participants are at an event. Architecture and decisions are described in [`CLAUDE.md`](CLAUDE.md).
 
 ## Running the project
 
@@ -35,8 +35,8 @@ The Api and the dashboard are two separate solutions. In Rider, open `processing
 Every application prints its links in the console once it has started:
 
 ```
-Mobil-app (denne maskine): http://localhost:8080/?event=00000000-0000-0000-0000-000000000001
-Mobil-app (offentligt link via Cloudflare-tunnel): https://<random>.trycloudflare.com/?event=...   (LAN only)
+Mobile app (this machine): http://localhost:8080/?event=00000000-0000-0000-0000-000000000001
+Mobile app (public link via Cloudflare tunnel): https://<random>.trycloudflare.com/?event=...      (LAN only)
 API (this machine):        http://localhost:5262
 API (LAN):                 http://192.168.x.x:5262                                                  (LAN only)
 Dashboard (this machine):  http://localhost:5111
