@@ -17,7 +17,7 @@ services:
       POSTGRES_USER: crowdcontrol
       POSTGRES_PASSWORD: crowdcontrol
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - main-db-data:/var/lib/postgresql/data
 

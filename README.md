@@ -70,7 +70,7 @@ The RabbitMQ management UI is at http://localhost:15672 (user and password: `cro
 ### Troubleshooting
 
 - **Port 8080, 5262 or 5111 is in use:** another instance is already running, e.g. from another IDE or terminal. Stop it first.
-- **The Api fails at startup with `password authentication failed for user "crowdcontrol"`:** another PostgreSQL (e.g. one installed directly on Windows) uses port 5432, so the Api reaches it instead of docker's main-db. Stop it while you work on CrowdControl (Windows, as admin: `Stop-Service postgresql-x64-18`). Moving main-db to another port is a TODO in `CLAUDE.md`.
+- **The Api fails at startup with `password authentication failed for user "crowdcontrol"`:** the Api reaches another PostgreSQL instead of docker's main-db. main-db listens on host port 5434 (not 5432, which a PostgreSQL installed directly on Windows often uses). Check that main-db was recreated after pulling (`docker compose up -d` does it) and that nothing else uses port 5434.
 - **No dots on the dashboard:** ingestion runs in `offline`, so positions are only logged. Use `lokal` or `LAN`, or open the dashboard with `?feed=fake`.
 - **The dashboard loads but the map never updates, or shows "An unhandled error has occurred":** the Api is not running, or runs in another mode than the dashboard. Start `Api – …` in the same mode, or open the dashboard with `?feed=fake` to use fake data.
 - **The dots are one small blob:** the map starts zoomed out over Zealand. Zoom in on the event's area.

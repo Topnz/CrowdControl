@@ -4,14 +4,12 @@ Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projekt
 
 > **Next session – start here (written 2026-10-28). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
 >
-> 1. **Merge PR #27** (`docs/dashboard-move`, the documentation for the dashboard move). First open `docs/architecture/design/klassediagram/klassediagram-system.puml` in the PlantUML preview; it has not been rendered. Then merge, delete the branch, and run `git checkout main && git pull`.
-> 2. **Move main-db off port 5432** (see "Næste skridt" in section 9). Small separate PR. Until then, the Windows service `postgresql-x64-18` is stopped and set to Manual on this machine, so it stays off after a reboot.
-> 3. **Pick the next feature:**
+> 1. **Pick the next feature:**
 >    - Agree on the fields in `contracts/`, including the send interval and end time for the mobile app. This blocks events and zones in the Api.
 >    - Small dashboard fixes from 9.1: `map.fitBounds` on the first snapshot, and a status message instead of a crash when the Api is down.
 >    - Central package management (`Directory.Packages.props`).
 >
-> Machine state: the .NET 10 SDK, Docker Desktop and `gh` (logged in as iMannys) are installed. Docker's `bin` folder may be missing from the PATH of an older terminal; restart the terminal or IDE.
+> Machine state: the .NET 10 SDK, Docker Desktop and `gh` (logged in as iMannys) are installed. Docker's `bin` folder may be missing from the PATH of an older terminal; restart the terminal or IDE. The Windows service `postgresql-x64-18` is stopped and set to Manual; since main-db moved to port 5434 it no longer conflicts, so it can be started again if needed.
 
 ---
 
@@ -596,7 +594,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
 - [x] `.\mvnw.cmd clean verify` er grøn. Root `.gitignore` er oprettet, og første commit er lavet på `main`.
 - [x] `processing-server/` oprettet jf. afsnit 6 (`dotnet new sln --format sln`, da .NET 10 ellers laver `.slnx`). (`Api` served the dashboard until it was moved to `dashboard/`, see 9.1.) Launch-profilen `offline` sætter miljøet `Offline` (hed tidligere `local`/`Local`). `dotnet build` + `dotnet test` er grønne.
 - [x] `contracts/` med skabeloner: OpenAPI (`POST /positions`, `GET /events/active`, `GET /history`), AsyncAPI (`positions`-kø, `event-changes`-exchange) og JSON-schemas uden felter.
-- [x] `docker-compose.yml`: RabbitMQ (5672, UI 15672), main-db (5432, `maindb`), event-db PostGIS (5433, `eventdb`). Bruger/password: `crowdcontrol`. Forbindelserne står i Java `application.properties` og C# `appsettings.json`.
+- [x] `docker-compose.yml`: RabbitMQ (5672, UI 15672), main-db (5434, `maindb`), event-db PostGIS (5433, `eventdb`). Bruger/password: `crowdcontrol`. Forbindelserne står i Java `application.properties` og C# `appsettings.json`.
 - [x] `mobile-app/` (afsnit 7).
 - [x] EF Core i `Infrastructure.Persistence`: Npgsql-provider, snake_case-navne, tom `MainDbContext`, `AddPersistence(IConfiguration)` og `Configurations/` til `IEntityTypeConfiguration<T>`. `Api` kører `Database.Migrate()` ved opstart i Development/Offline. `dotnet-ef` er lokalt værktøj (`processing-server/dotnet-tools.json`; kør `dotnet tool restore`). Ny migration: `dotnet dotnet-ef migrations add <Navn> --project src/CrowdControl.Infrastructure.Persistence --startup-project src/CrowdControl.Api`.
 - [x] CI: `.github/workflows/ingestion-server.yml`, `processing-server.yml` og `dashboard.yml` (GitHub Actions) med path-filtre; `contracts/**` triggers all three. `mvnw` er markeret eksekverbar i git.
@@ -610,7 +608,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [x] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
-- [ ] **Move main-db off port 5432 (small separate PR):** a PostgreSQL installed directly on Windows (e.g. the service `postgresql-x64-18`) also uses 5432, so the Api connects to it instead of docker's main-db and fails with `28P01: password authentication failed for user "crowdcontrol"` (found 2026-10-28). Change only the host port, e.g. to 5434: `"5434:5432"` in `docker-compose.yml` (main-db), `Port=5434` in `processing-server/src/CrowdControl.Api/appsettings.json` (`MainDb`), and the port in the docker-compose line of section 9. The container port stays 5432; event-db (5433) and ingestion are not affected. Until then, stop the Windows service while working on CrowdControl (`Stop-Service postgresql-x64-18`, as admin).
+- [x] **Moved main-db's host port from 5432 to 5434 (2026-10-29):** a PostgreSQL installed directly on Windows (e.g. the service `postgresql-x64-18`) also uses 5432, so the Api connected to it instead of docker's main-db and failed with `28P01: password authentication failed for user "crowdcontrol"`. Only the host port changed (`"5434:5432"` in `docker-compose.yml`, `Port=5434` in the Api's `appsettings.json`); the container port stays 5432, and event-db (5433) and ingestion are not affected.
 - [ ] **Central package management:** add a `Directory.Packages.props` to both `processing-server/` and `dashboard/` (separate small PR), so `Microsoft.AspNetCore.*` versions (10.0.13 today) cannot drift apart between the two solutions.
 - [ ] **Open question: where does grid aggregation belong?** §3 says `CrowdControl.Domain` holds grid aggregation, but `GridAggregator` lives in `Application/MonitorEvent/`. Decide whether the aggregation rule moves to `Domain` (e.g. when history, ID-10, makes stored grid cells a domain concept) or whether §3 should be corrected.
 - [ ] **HeatmapSnapshot v2 (later, once events and zones exist in the Api):** add `eventId` to the snapshot and `zoneId` to each `ZoneCount` in `contracts/schemas/signalr/HeatmapSnapshot.v2.json`, so the dashboard can tell events and zones apart by ID instead of by name. v1 deliberately describes the snapshot as the Api sends it today (no IDs), so the dashboard move stays a pure move.
