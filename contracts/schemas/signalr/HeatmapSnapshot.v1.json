@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/signalr/HeatmapSnapshot.v1.json",
+  "title": "HeatmapSnapshot",
+  "description": "Current heatmap for an event: positions counted per grid cell and per zone. Pushed by processing-server to the dashboard as the SignalR message HeatmapUpdated on /hubs/heatmap, and returned by GET /heatmap. Counts currently accumulate from when processing-server started and are never reset. Known gap (planned v2): the snapshot carries no eventId or zoneId, only names.",
+  "type": "object",
+  "properties": {
+    "eventName": {
+      "type": "string",
+      "description": "Name of the event the snapshot belongs to."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the snapshot was taken (UTC)."
+    },
+    "minLat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "description": "Latitude of the grid origin (south-west corner of cell x = 0, y = 0)."
+    },
+    "minLon": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180,
+      "description": "Longitude of the grid origin (south-west corner of cell x = 0, y = 0)."
+    },
+    "cellSizeLat": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Height of a grid cell in degrees of latitude."
+    },
+    "cellSizeLon": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Width of a grid cell in degrees of longitude."
+    },
+    "cells": {
+      "type": "array",
+      "description": "Grid cells with at least one position. Empty cells are left out.",
+      "items": { "$ref": "#/$defs/Cell" }
+    },
+    "zones": {
+      "type": "array",
+      "description": "Position count for each of the event's zones. Empty if the event has no zones.",
+      "items": { "$ref": "#/$defs/ZoneCount" }
+    }
+  },
+  "required": ["eventName", "timestamp", "minLat", "minLon", "cellSizeLat", "cellSizeLon", "cells", "zones"],
+  "additionalProperties": false,
+  "$defs": {
+    "Cell": {
+      "type": "object",
+      "description": "A grid cell identified by its index from the grid origin. The cell centre is at latitude minLat + (y + 0.5) * cellSizeLat and longitude minLon + (x + 0.5) * cellSizeLon.",
+      "properties": {
+        "x": { "type": "integer", "description": "Column index, counted eastwards from minLon." },
+        "y": { "type": "integer", "description": "Row index, counted northwards from minLat." },
+        "count": { "type": "integer", "minimum": 1, "description": "Number of positions in the cell." }
+      },
+      "required": ["x", "y", "count"],
+      "additionalProperties": false
+    },
+    "ZoneCount": {
+      "type": "object",
+      "description": "Position count for one zone. The dashboard notifies the event holder at 90 % of capacity and marks the zone when capacity is exceeded.",
+      "properties": {
+        "name": { "type": "string", "description": "Zone name, e.g. \"Bøgescenen Sektion A\"." },
+        "capacity": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Maximum number of participants, or null if the zone has no capacity."
+        },
+        "count": { "type": "integer", "minimum": 0, "description": "Number of positions counted inside the zone." }
+      },
+      "required": ["name", "capacity", "count"],
+      "additionalProperties": false
+    }
+  }
+}

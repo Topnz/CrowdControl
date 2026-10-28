@@ -1,0 +1,44 @@
+asyncapi: 3.0.0
+info:
+  title: CrowdControl Dashboard Push
+  version: 0.1.0
+  description: |
+    SignalR contract between processing-server (C#) and the dashboard (Blazor WebAssembly).
+    Kept apart from messaging.yaml, which covers RabbitMQ between ingestion-server and
+    processing-server.
+
+    SignalR wraps each payload in its own frame. With the JSON hub protocol the message
+    arrives as an invocation where `target` is the message name (e.g. `HeatmapUpdated`)
+    and `arguments[0]` is the payload described here. Property names are camelCase.
+servers:
+  processing:
+    host: localhost:5262
+    protocol: ws
+    description: |
+      processing-server (Api). The SignalR client negotiates the transport (WebSocket,
+      falling back to Server-Sent Events or long polling).
+channels:
+  heatmap:
+    address: /hubs/heatmap
+    description: SignalR hub that pushes the current heatmap to every connected dashboard.
+    messages:
+      HeatmapUpdated:
+        $ref: '#/components/messages/HeatmapUpdated'
+operations:
+  pushHeatmap:
+    action: send
+    channel:
+      $ref: '#/channels/heatmap'
+    summary: Processing-server pushes a heatmap snapshot to all clients every 3 seconds.
+  receiveHeatmap:
+    action: receive
+    channel:
+      $ref: '#/channels/heatmap'
+    summary: The dashboard redraws the heatmap and zone counts without reloading.
+components:
+  messages:
+    HeatmapUpdated:
+      name: HeatmapUpdated
+      contentType: application/json
+      payload:
+        $ref: '../schemas/signalr/HeatmapSnapshot.v1.json'

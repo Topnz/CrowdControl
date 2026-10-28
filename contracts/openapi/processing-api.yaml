@@ -19,6 +19,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ActiveEvent'
+  /heatmap:
+    get:
+      summary: Get the current heatmap snapshot (called by the dashboard)
+      description: |
+        Same snapshot as the SignalR message HeatmapUpdated (see asyncapi/dashboard.yaml),
+        so the dashboard can draw the map right away instead of waiting for the next push.
+      operationId: getHeatmap
+      responses:
+        '200':
+          description: The latest heatmap snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeatmapSnapshot'
+        '204':
+          description: No snapshot yet (the first one is taken 3 seconds after startup)
   /history:
     get:
       summary: Hent heatmap-historik (kaldes af dashboardet)
@@ -35,6 +51,8 @@ components:
     ActiveEvent:
       description: Kommende og aktive events inkl. zoner (samme form som EventCreated/EventUpdated).
       $ref: '../schemas/shared/common.v1.json#/$defs/Event'
+    HeatmapSnapshot:
+      $ref: '../schemas/signalr/HeatmapSnapshot.v1.json'
     HeatmapHistory:
       type: object
       description: TODO – felter aftales i holdet
