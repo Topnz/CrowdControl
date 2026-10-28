@@ -1,5 +1,5 @@
 @startuml protocol-behandl-position
-!include astah-style.iuml
+!include ../../styles/astah-style.iuml
 title Behandl position
 
 participant "Ingestion-server" as Ing

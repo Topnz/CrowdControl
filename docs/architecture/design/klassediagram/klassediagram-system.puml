@@ -1,0 +1,327 @@
+@startuml klassediagram-system
+' Class diagram for the whole system, drawn from the code as it is now.
+' One package per Maven module / .NET project. Planned classes are not shown;
+' see the C3 diagrams for those.
+!include ../../styles/class-style.iuml
+left to right direction
+
+title CrowdControl - Klassediagram (hele systemet)
+
+package "ingestion-server (Java)" {
+  package "domain" as jdomain {
+    class "GeoPoint" as JGeoPoint {
+      - latitude : double
+      - longitude : double
+    }
+    class "Boundary" as JBoundary {
+      - geoPoints : List<GeoPoint>
+      - polygon : Path2D.Double
+      + contains(point : GeoPoint) : boolean
+    }
+    class "Event" as JEvent {
+      - id : UUID
+      - name : String
+      - startTime : Instant
+      - endTime : Instant
+      - sendInterval : Duration
+      + isActiveAt(time : Instant) : boolean
+      + accepts(position : Position) : boolean
+      + zonesContaining(point : GeoPoint) : List<Zone>
+    }
+    class "Zone" as JZone {
+      - id : UUID
+      - name : String
+      + contains(point : GeoPoint) : boolean
+    }
+    class "Position" as JPosition {
+      - accuracy : double
+      - timestamp : Instant
+    }
+    class "SessionId" as JSessionId {
+      - value : UUID
+      + {static} of(value : String) : SessionId
+    }
+    class "FilteredPosition" as JFiltered {
+      - eventId : UUID
+      - zoneIds : List<UUID>
+      + {static} from(event : Event, position : Position) : Optional<FilteredPosition>
+    }
+  }
+
+  package "application" as japp {
+    interface ReceivePositionUseCase {
+      + receivePosition(position : Position, eventId : UUID) : void
+    }
+    class ReceivePositionService
+    interface ActiveEventRepository {
+      + findById(eventId : UUID) : Optional<Event>
+      + createOrReplace(event : Event) : void
+      + delete(eventId : UUID) : void
+    }
+    interface PositionPublisher {
+      + publish(filteredPosition : FilteredPosition) : void
+    }
+    interface RateLimiter {
+      + allow(sessionId : SessionId) : boolean
+    }
+    class OutsideActiveEventException
+    class RateLimitExceededException
+  }
+
+  package "adapter-rest-in" as jrest {
+    class PositionController {
+      + receivePosition(request : PositionRequest) : ResponseEntity<Void>
+    }
+    class PositionRequest <<record>> {
+      sessionId : UUID
+      eventId : UUID
+      latitude : Double
+      longitude : Double
+      accuracy : Double
+      timestamp : Instant
+      + toDomain() : Position
+    }
+    class RestExceptionHandler
+  }
+
+  package "adapter-rabbit-out" as jout {
+    class RabbitPositionPublisher {
+      - queueName : String
+    }
+    class PosData <<record>> {
+      sessionId : UUID
+      eventId : UUID
+      zoneIds : List<UUID>
+      latitude : double
+      longitude : double
+      accuracy : double
+      timestamp : Instant
+      + {static} from(fp : FilteredPosition) : PosData
+    }
+    class MessagingConfig
+  }
+
+  package "adapter-in-memory" as jmem {
+    class InMemoryActiveEventRepository {
+      - activeEvents : Map<UUID, Event>
+    }
+    class InMemoryRateLimiter {
+      - lastAllowed : Map<SessionId, Instant>
+      - minInterval : Duration
+    }
+    class LoggingPositionPublisher
+    class DemoEventSeeder
+  }
+
+  package "bootstrap" as jboot {
+    class IngestionServerApplication
+    class UseCaseConfig
+    class MobileAppLinks
+    class LocalLinkPrinter
+    class CloudflareTunnel
+  }
+}
+
+package "processing-server (C#)" {
+  package "CrowdControl.Domain" as cdomain {
+    class "GeoPoint" as CGeoPoint {
+      + Latitude : double
+      + Longitude : double
+    }
+    class "Boundary" as CBoundary {
+      + AddGeoPoint(point : GeoPoint) : void
+      + AddGeoPoints(points : IEnumerable<GeoPoint>) : void
+    }
+    class "Event" as CEvent {
+      + Name : string
+      + StartTime : DateTime
+      + EndTime : DateTime
+      + SendInterval : int
+      + AddZone(zone : Zone) : bool
+    }
+    class "Zone" as CZone {
+      + Name : string
+      + Capacity : int
+    }
+    class "Position" as CPosition {
+      + Timestamp : DateTime
+      + Accuracy : int
+    }
+    class HistoryEntry {
+      + Timestamp : DateTime
+      + ParticipantCount : int
+    }
+    class Organizer {
+      + Username : string
+      + Password : string
+      + HasChangedPassword : bool
+    }
+    class Participant {
+      + HasConsented : bool
+    }
+  }
+
+  package "CrowdControl.Application" as capp {
+    interface IReceivePositionUseCase {
+      + HandleAsync(position : PositionReceived, ct : CancellationToken) : Task
+    }
+    class "ReceivePositionService" as CReceive
+    class PositionReceived <<record>> {
+      SessionId : Guid
+      EventId : Guid
+      ZoneIds : IReadOnlyList<Guid>
+      Latitude : double
+      Longitude : double
+      Accuracy : double
+      Timestamp : DateTimeOffset
+    }
+    class GridAggregator {
+      - _eventName : string
+      - _minLat : double
+      - _minLon : double
+      - _cellSizeLat : double
+      - _cellSizeLon : double
+      + Add(latitude : double, longitude : double) : void
+      + GetSnapshot() : HeatmapSnapshotDto
+      + Reset() : void
+    }
+    class PolygonHelper <<static>> {
+      + {static} IsInside(corners : IReadOnlyList<GeoPoint>, point : GeoPoint) : bool
+    }
+  }
+
+  package "CrowdControl.Shared" as cshared {
+    class HeatmapSnapshotDto {
+      + EventName : string
+      + Timestamp : DateTime
+      + MinLat : double
+      + MinLon : double
+      + CellSizeLat : double
+      + CellSizeLon : double
+    }
+    class CellDto {
+      + X : int
+      + Y : int
+      + Count : int
+    }
+    class ZoneCountDto {
+      + Name : string
+      + Capacity : int
+      + Count : int
+    }
+  }
+
+  package "CrowdControl.Infrastructure.Messaging" as cmsg {
+    class RabbitMqPositionConsumer
+    class PositionMessage <<static>> {
+      + {static} Deserialize(body : ReadOnlySpan<byte>) : PositionReceived
+    }
+    class RabbitMqOptions {
+      + Host : string
+      + Port : int
+      + Username : string
+      + Password : string
+      + PositionsQueue : string
+    }
+    class MessagingServiceCollectionExtensions <<static>> {
+      + {static} AddRabbitMqMessaging(...) : IServiceCollection
+    }
+  }
+
+  package "CrowdControl.Infrastructure.Persistence" as cpers {
+    class MainDbContext
+    class PersistenceServiceCollectionExtensions <<static>> {
+      + {static} AddPersistence(...) : IServiceCollection
+    }
+  }
+
+  package "CrowdControl.Api" as capi {
+    class HeatmapController {
+      + GetSnapshot() : ActionResult<HeatmapSnapshotDto>
+    }
+    class HeatmapHub
+    class HeatmapBroadcaster
+    class LatestHeatmap
+    class StartupLinks <<static>>
+  }
+
+  package "CrowdControl.Dashboard" as cdash {
+    class MapService {
+      - _mapInitialized : bool
+      + InitializeAsync() : Task
+      + AddPointAsync(latitude : double, longitude : double) : Task
+      + DisposeAsync() : ValueTask
+    }
+    class ApiAddress <<record>> {
+      BaseUrl : Uri
+      + {static} From(template : string?, dashboardAddress : Uri) : ApiAddress
+      + Resolve(path : string) : Uri
+    }
+    class Home <<razor>>
+  }
+}
+
+' --- Java: domain
+JBoundary "1" o-- "3..*" JGeoPoint
+JEvent "1" *-- "1" JBoundary : perimeter
+JEvent "1" *-- "0..*" JZone : zones
+JZone "1" *-- "1" JBoundary : boundary
+JPosition --> "1" JSessionId
+JPosition --> "1" JGeoPoint
+JFiltered --> "1" JPosition
+
+' --- Java: application and adapters
+ReceivePositionService ..|> ReceivePositionUseCase
+ReceivePositionService --> RateLimiter
+ReceivePositionService --> ActiveEventRepository
+ReceivePositionService --> PositionPublisher
+ReceivePositionService ..> OutsideActiveEventException : <<throws>>
+ReceivePositionService ..> RateLimitExceededException : <<throws>>
+PositionController --> ReceivePositionUseCase
+PositionController ..> PositionRequest
+RabbitPositionPublisher ..|> PositionPublisher
+RabbitPositionPublisher ..> PosData
+LoggingPositionPublisher ..|> PositionPublisher
+InMemoryActiveEventRepository ..|> ActiveEventRepository
+InMemoryRateLimiter ..|> RateLimiter
+DemoEventSeeder --> ActiveEventRepository
+UseCaseConfig ..> ReceivePositionService : <<create>>
+LocalLinkPrinter --> MobileAppLinks
+CloudflareTunnel --> MobileAppLinks
+
+' --- C#: domain
+CBoundary "1" o-- "3..*" CGeoPoint
+CEvent "1" *-- "1" CBoundary : Perimiter
+CEvent "1" *-- "0..*" CZone : Zones
+CZone "1" *-- "1" CBoundary : Boundary
+CPosition --> "1" CGeoPoint
+HistoryEntry --> "1" CEvent
+
+' --- C#: application, infrastructure, api and dashboard
+CReceive ..|> IReceivePositionUseCase
+CReceive --> GridAggregator
+GridAggregator --> "0..*" CZone
+GridAggregator ..> PolygonHelper
+GridAggregator *-- "0..*" CellDto
+GridAggregator *-- "0..*" ZoneCountDto
+GridAggregator ..> HeatmapSnapshotDto : <<create>>
+HeatmapSnapshotDto *-- "0..*" CellDto : Cells
+HeatmapSnapshotDto *-- "0..*" ZoneCountDto : Zones
+RabbitMqPositionConsumer --> RabbitMqOptions
+RabbitMqPositionConsumer ..> PositionMessage
+RabbitMqPositionConsumer ..> IReceivePositionUseCase
+PositionMessage ..> PositionReceived
+HeatmapBroadcaster --> GridAggregator
+HeatmapBroadcaster --> LatestHeatmap
+HeatmapBroadcaster ..> HeatmapHub : IHubContext
+LatestHeatmap --> "0..1" HeatmapSnapshotDto : Snapshot
+HeatmapController --> LatestHeatmap
+Home --> MapService
+MapService --> ApiAddress
+MapService ..> HeatmapSnapshotDto
+
+note "Java -> RabbitMQ -> C#: PosData serialiseres til JSON\nog læses som PositionReceived (samme felter).\nIngen kodeafhængighed - kontrakten er\ncontracts/schemas/rabbitMQ/PositionReceived.v1.json" as N1
+PosData .. N1
+N1 .. PositionReceived
+
+@enduml

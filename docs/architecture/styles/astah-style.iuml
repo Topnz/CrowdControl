@@ -1,6 +1,6 @@
 ' Shared style for the protocol diagrams, matching Astah's defaults:
 ' yellow lifelines, pink notes, black lines, no shadows and no footbox.
-' Use with: !include astah-style.iuml
+' Use with: !include ../../styles/astah-style.iuml
 
 skinparam style strictuml
 skinparam shadowing false
