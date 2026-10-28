@@ -2,12 +2,13 @@
 
 Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projektet (SEP3). Den er skrevet til at ligge i repo-roden som `CLAUDE.md`, så Claude Code automatisk læser den.
 
-> **Next session – start here (written 2026-10-28). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
+> **Next session – start here (updated 2026-10-29). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
 >
-> 1. **Pick the next feature:**
->    - Agree on the fields in `contracts/`, including the send interval and end time for the mobile app. This blocks events and zones in the Api.
->    - Small dashboard fixes from 9.1: `map.fitBounds` on the first snapshot, and a status message instead of a crash when the Api is down.
->    - Central package management (`Directory.Packages.props`).
+> 1. **Urgent:** agree on the fields in `contracts/`, including the send interval and end time for the mobile app. This blocks events and zones in the Api.
+> 2. **To-dos, can be done whenever:**
+>    - Dashboard (9.1): `map.fitBounds` on the first snapshot, so the map zooms to the data.
+>    - Dashboard (9.1): a status message instead of a crash when the Api is down.
+>    - Central package management (`Directory.Packages.props`, see §9).
 >
 > Machine state: the .NET 10 SDK, Docker Desktop and `gh` (logged in as iMannys) are installed. Docker's `bin` folder may be missing from the PATH of an older terminal; restart the terminal or IDE. The Windows service `postgresql-x64-18` is stopped and set to Manual; since main-db moved to port 5434 it no longer conflicts, so it can be started again if needed.
 
