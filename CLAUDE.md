@@ -140,11 +140,16 @@ CrowdControl/
 │   ├── analyse/
 │   │   ├── krav/                    # user-stories.md, non-functional-requirements.md
 │   │   └── ssd/                     # systemsekvensdiagrammer
-│   └── design/
-│       ├── c2/                      # c2.drawio + c2.png
-│       ├── klassediagram/
-│       ├── sekvensdiagrammer/
-│       └── kommunikationsprotokol/  # HTTP- og AMQP-protokoller (PlantUML)
+│   ├── design/
+│   │   ├── c1/                      # systemkontekst (drawio)
+│   │   ├── c2/                      # containere (drawio)
+│   │   ├── c3/                      # komponenter pr. container (drawio)
+│   │   ├── c4/                      # kode, klassediagrammer pr. komponent (drawio)
+│   │   ├── klassediagram/           # hele systemet (PlantUML)
+│   │   ├── sekvensdiagrammer/
+│   │   └── kommunikationsprotokol/  # HTTP- og AMQP-protokoller (PlantUML)
+│   └── styles/                      # fælles PlantUML-stil (Astah-farver): astah-style.iuml
+│                                    # (sekvens), class-style.iuml (klasser)
 │
 ├── contracts/                       # Det ENESTE der deles på tværs af containere
 │   ├── openapi/
@@ -523,7 +528,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 
 - [ ] Aftal felterne i `contracts/` (schemas og request/response-typer), inkl. sendeinterval og sluttid til mobil-appen.
 - [ ] Gør acceptkriterierne i `docs/architecture/analyse/krav/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
-- [ ] Eksportér `docs/architecture/design/c2/c2.png` igen fra den opdaterede `c2.drawio`.
+- [x] C1–C4 i drawio og klassediagram for hele systemet i PlantUML (`docs/architecture/design/`). Den gamle `c2.drawio`/`c2.png` og `class-diagram.drawio` er slettet. C4-diagrammerne bruger drawio's C4-elementer med ortogonale (90°) pile: personer `mxgraph.c4.person2` (#6b6477), softwaresystem #3c6bb3, containere #5b9bd5, komponenter #dae8fc, domæne #d5e8d4, eksterne systemer #999999. Planlagte dele tegnes stiplet grå (#eef1f6/#8c9ab3). Sekvens-, protokol- og klassediagrammer laves i PlantUML.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
@@ -602,7 +607,7 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - [ ] 8. CI: ny `.github/workflows/dashboard.yml` med path-filter `dashboard/**` + `contracts/**`. Fjern dashboard-delen fra `processing-server.yml`, hvis den har nogen.
 - [ ] 9. Kørsel: `Dashboard – offline/lokal/LAN` findes i Rider (`processing-server/.run/`) og VS Code (inkl. compounds). Mangler ved flytningen: flyt Rider-konfigurationerne til `dashboard/.run/`, opdatér stierne i `.vscode/`, drop `--no-build`-varianterne (ingen delt build længere), lad dashboardet printe sit eget LAN-link (dev-serveren printer kun `0.0.0.0`), og lad Api'et kun printe API-adressen.
 - [ ] 10. Docker (valgfrit, senere): `dashboard`-service i `docker-compose.yml`, der serverer `dotnet publish`-output statisk.
-- [ ] 11. Opdatér dokumentationen: C2-diagrammet (`c2.drawio` → `c2.png`: dashboardet serveres ikke længere af processing-server), og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
+- [ ] 11. Opdatér dokumentationen: C2, C3 og C4 i `docs/architecture/design/` (dashboardet serveres ikke længere af processing-server, `CrowdControl.Shared` udgår, `GridAggregator` returnerer egne modeltyper) og `klassediagram/klassediagram-system.puml`, og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
 - [ ] 12. Verificér: `dotnet build` + `dotnet test` grøn i både `processing-server/` og `dashboard/`; live heatmap virker end-to-end (Api + dashboard) og med fake-feed alene.
 
 ---

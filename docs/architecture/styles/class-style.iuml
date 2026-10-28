@@ -1,0 +1,24 @@
+' Shared style for the class diagrams (whole system and C4), matching Astah's
+' defaults: yellow classes, pink notes, black lines and no shadows.
+' Use with: !include ../../styles/class-style.iuml
+skinparam style strictuml
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+hide empty members
+hide circle
+skinparam class {
+  BackgroundColor #FFFFCC
+  BorderColor #000000
+  ArrowColor #000000
+}
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #000000
+}
+skinparam note {
+  BackgroundColor #FFCCCC
+  BorderColor #000000
+}
+set separator none
