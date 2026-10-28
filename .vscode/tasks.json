@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker compose up",
+      "type": "shell",
+      "command": "docker compose up -d --wait",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build api",
+      "type": "shell",
+      "command": "dotnet build processing-server/src/CrowdControl.Api",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "docker compose up + build api",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "docker compose up",
+        "build api"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

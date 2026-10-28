@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Profile;
  * RabbitTemplate laves af Spring Boot og bruger automatisk converter-beanen nedenfor.
  */
 @Configuration
-@Profile("!local")
+@Profile("!offline")
 public class MessagingConfig
 {
   /** Durable kø; oprettes i RabbitMQ ved første forbindelse, hvis den ikke findes. */

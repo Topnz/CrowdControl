@@ -2,7 +2,10 @@
 .idea/
 *.iml
 .vs/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 *.user
 *.DotSettings.user
 

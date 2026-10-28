@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Holder aktive events i hukommelsen. Bruges i alle profiler, indtil
- * adapter-persistence-postgis har en implementering; så skal denne have @Profile("local").
+ * adapter-persistence-postgis har en implementering; så skal denne have @Profile("offline").
  * ConcurrentHashMap, fordi requests håndteres i flere tråde samtidig.
  */
 @Component

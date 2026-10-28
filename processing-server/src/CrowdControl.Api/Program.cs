@@ -1,3 +1,4 @@
+using CrowdControl.Api;
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
 using CrowdControl.Infrastructure.Messaging;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Static web assets (Dashboard) indlæses kun automatisk i Development
-if (builder.Environment.IsEnvironment("Local"))
+if (builder.Environment.IsEnvironment("Offline"))
     builder.WebHost.UseStaticWebAssets();
 
 builder.Services.AddPersistence(builder.Configuration);
@@ -55,14 +56,14 @@ builder.Services.AddSingleton<LatestHeatmap>();
 builder.Services.AddHostedService<HeatmapBroadcaster>();
 builder.Services.AddSingleton<IReceivePositionUseCase, ReceivePositionService>();
 
-// Local kører uden RabbitMQ (fake-messaging kommer senere)
-if (!builder.Environment.IsEnvironment("Local"))
+// Offline kører uden RabbitMQ (fake-messaging kommer senere)
+if (!builder.Environment.IsEnvironment("Offline"))
     builder.Services.AddRabbitMqMessaging(builder.Configuration);
 
 var app = builder.Build();
 
 // Opdaterer main-db til nyeste EF Core-migration ved opstart (kræver docker compose)
-if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local"))
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Offline"))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
@@ -78,5 +79,7 @@ app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<HeatmapHub>("/hubs/heatmap");
 app.MapFallbackToFile("index.html");
+
+StartupLinks.PrintOnStarted(app);
 
 app.Run();
