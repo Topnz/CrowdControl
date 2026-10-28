@@ -1,0 +1,127 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f7;
+  --bar: rgba(245, 245, 247, 0.8);
+  --card: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --accent: #0071e3;
+  --danger: #ff3b30;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --bar: rgba(0, 0, 0, 0.75);
+    --card: #1c1c1e;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --border: #38383a;
+    --accent: #0a84ff;
+    --danger: #ff453a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Knappen ligger i en fast top, så den kan nås, mens man scroller i teksten */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: calc(20px + env(safe-area-inset-top)) 16px 16px;
+  background: var(--bar);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+
+header > *, main { max-width: 520px; margin-left: auto; margin-right: auto; }
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.lead {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+
+button:active { transform: scale(0.98); }
+
+/* button har display: block, så hidden-attributten skal have forrang */
+[hidden] { display: none !important; }
+
+button.stop { background: var(--danger); }
+
+button:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: default;
+  transform: none;
+}
+
+#status {
+  margin-top: 10px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+#status:empty { display: none; }
+
+main { padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); }
+
+.card {
+  padding: 4px 22px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+h2 {
+  margin-top: 24px;
+  margin-bottom: 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.card p, .card li { font-size: 15px; }
+.card p { margin-top: 0; margin-bottom: 10px; }
+.card ul { margin-top: 0; margin-bottom: 10px; padding-left: 1.2em; }
+.card li { margin-bottom: 4px; }
+
+a { color: var(--accent); }

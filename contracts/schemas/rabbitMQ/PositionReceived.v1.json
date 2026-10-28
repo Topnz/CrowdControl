@@ -8,7 +8,7 @@
     "sessionId": {
       "type": "string",
       "format": "uuid",
-      "description": "Anonymt, tilfældigt ID pr. enhed."
+      "description": "Pseudonymt, tilfældigt ID pr. enhed."
     },
     "eventId": { "type": "string", "format": "uuid" },
     "zoneIds": {

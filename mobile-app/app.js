@@ -1,4 +1,4 @@
-// Sender brugerens position anonymt til ingestion-server, når brugeren har givet samtykke.
+// Sender brugerens position pseudonymt til ingestion-server, når brugeren har givet samtykke.
 // Payload skal følge contracts/openapi/ingestion-api.yaml (POST /positions).
 // Siden åbnes med eventets ID i URL'en: /?event=<eventId>
 
@@ -7,6 +7,7 @@ const sessionId = crypto.randomUUID();
 const eventId = new URLSearchParams(window.location.search).get("event");
 
 const button = document.getElementById("consent");
+const stopButton = document.getElementById("stop");
 const status = document.getElementById("status");
 
 let timer = null;
@@ -22,10 +23,18 @@ button.addEventListener("click", () => {
     status.textContent = "Din browser understøtter ikke positionsdeling.";
     return;
   }
-  button.disabled = true;
+  showStopButton(true);
   sendPosition();
   timer = setInterval(sendPosition, INTERVAL_MS);
 });
+
+// TODO (ID-18): Stop deling skal stoppe timeren og slette session-ID'et. Knappen gør intet endnu.
+
+// Mens der deles, erstattes samtykke-knappen af stop-knappen
+function showStopButton(sharing) {
+  button.hidden = sharing;
+  stopButton.hidden = !sharing;
+}
 
 function sendPosition() {
   navigator.geolocation.getCurrentPosition(
@@ -49,7 +58,7 @@ function sendPosition() {
       // Stop med at prøve, så brugeren kan trykke igen efter at have givet adgang
       clearInterval(timer);
       status.textContent = "Du har ikke givet adgang til din position.";
-      button.disabled = false;
+      showStopButton(false);
     },
     { enableHighAccuracy: true },
   );

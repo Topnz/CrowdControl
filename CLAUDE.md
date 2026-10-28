@@ -22,7 +22,7 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 
 | Container | Teknologi | Ansvar |
 |---|---|---|
-| Mobile app | JavaScript, HTML (mobilbrowser) | Læser position via Geolocation API i et givent interval og sender den anonymt. Serveres som statisk indhold af ingestion-server. |
+| Mobile app | JavaScript, HTML (mobilbrowser) | Læser position via Geolocation API i et givent interval og sender den pseudonymt. Serveres som statisk indhold af ingestion-server. |
 | Ingestion-server | Java, Spring Boot | Modtager positioner, validerer dem mod aktive events og eventområder, rate-limiter og publicerer til køen. Serverer mobil-appen. |
 | Event-database | PostgreSQL + PostGIS | Kopi af aktive events: ID, tidsrum og område. Ejes af ingestion-server. |
 | Message broker | RabbitMQ | Kø med positioner (Java → C#) og exchange med event-ændringer (C# → Java). |
@@ -57,7 +57,7 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 | Epic | Stories | Indhold |
 |---|---|---|
 | ID-5 Håndtér samtykke & privatliv | ID-14, 15, 18, 21, 22 | Aktivt samtykke; information om indsamlede data og opbevaringstid før samtykke; stop deling; automatisk stop når eventet slutter; vis om positionen deles lige nu. |
-| ID-6 Del position | ID-16, 20, 28, 29, 40 | Anonym deling; antal deltagere vises kun for eventets zoner; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed; nøjagtighed i meter på hver position, så upræcise data kan frasorteres. |
+| ID-6 Del position | ID-16, 20, 28, 29, 40 | Pseudonym deling; antal deltagere vises kun for eventets zoner; arrangøren bestemmer sendeintervallet; rate limiting pr. enhed; nøjagtighed i meter på hver position, så upræcise data kan frasorteres. |
 | ID-7 Administrér event | ID-13, 23, 24, 33, 35 | Opret/redigér/slet event; liste over kommende og aktive events (med navn, tidsrum, zoner og status); et oprettet/redigeret event modtager positioner inden for 30 sekunder. |
 | ID-8 Administrér zone | ID-25, 26, 27, 34, 36 | Opret/redigér/slet zoner; maks. antal deltagere pr. zone med notifikation, når antallet når 90 % af kapaciteten, og markering ved overskridelse; ny zone vises straks med antal deltagere. |
 | ID-9 Overvåg event | ID-17, 41 | Live heatmap (positioner samlet i grid-celler) og antal deltagere pr. zone, opdateret ved hver ny data uden genindlæsning; positioner uden for eventets område og tidsrum afvises af ingestion-server. |
@@ -79,7 +79,7 @@ Konsekvenser for arkitekturen:
 | Zone | Et navngivent delområde inden for et events område (fx "Bøgescenen Sektion A") med en valgfri kapacitet (maks. antal deltagere). Arrangøren får en notifikation, når antallet når 90 % af kapaciteten, og zonen markeres, når kapaciteten overskrides. |
 | Sendeinterval | Hvor ofte mobil-appen sender deltagerens position. Sættes af arrangøren pr. event. |
 | Samtykke | Deltagerens aktive accept af positionsdeling. Kan trækkes tilbage med stop-knappen (session-ID'et slettes i browseren) og ophører automatisk ved eventets sluttid. |
-| Position | Koordinater, nøjagtighed i meter og tidspunkt, sendt anonymt med et tilfældigt session-ID. |
+| Position | Koordinater, nøjagtighed i meter og tidspunkt, sendt pseudonymt med et tilfældigt session-ID. Aggregerede data er anonyme. |
 | Historik | Aggregerede positionsdata (antal deltagere i eventet og zonerne over tid), som slettes efter 24 måneder. |
 
 ### 1.2 Use cases
@@ -154,7 +154,7 @@ CrowdControl/
 │       └── shared/
 │           └── common.v1.json       # GeoPoint, Polygon, Zone, Event (AMQP + REST)
 │
-├── mobile-app/                      # ren HTML/JS, intet build-værktøj, ingen CSS
+├── mobile-app/                      # ren HTML/JS, intet build-værktøj, CSS kun inline
 │   ├── index.html                   # samtykke-knap
 │   └── app.js                       # Geolocation API → POST /positions
 │
@@ -468,7 +468,7 @@ Arkitekturtests kan tilføjes med NetArchTest (C#) og ArchUnit (Java).
 ## 7. Mobile-app
 
 - "Appen" er udelukkende et sted, hvor brugeren accepterer at dele sin geolocation. Den skal på sigt embeddes i et andet system.
-- Kun `index.html` (information om indsamlede data og opbevaringstid på 24 måneder, samtykke-knap, stop-knap, status for deling) og `app.js` (Geolocation API → `POST /positions` i det interval, arrangøren har valgt, med et anonymt `sessionId`; stopper automatisk ved eventets sluttid). Ingen CSS, ingen frameworks, intet build-værktøj (ingen npm/Vite).
+- Kun `index.html` (information om indsamlede data og opbevaringstid på 24 måneder, samtykke-knap, stop-knap, status for deling) og `app.js` (Geolocation API → `POST /positions` i det interval, arrangøren har valgt, med et pseudonymt `sessionId`; stopper automatisk ved eventets sluttid). CSS står i en `<style>`-blok i `index.html` (ingen separate CSS-filer). Ingen frameworks, intet build-værktøj (ingen npm/Vite).
 - `ingestion-server/bootstrap/pom.xml` kopierer `mobile-app/` til `static/` med `maven-resources-plugin:copy-resources` (fase `process-resources`), så siden serveres af ingestion-server uden et manuelt kopi-trin. Bevidst ikke som `<resource>`, da IntelliJ så viser mappen som `mobile-app [bootstrap]`. Kør derfor ingestion-server via Maven (`spring-boot:run`) eller med "Delegate IDE build/run actions to Maven" slået til, hvis mobil-appen skal serveres.
 - Payloaden i `app.js` skal følge `contracts/openapi/ingestion-api.yaml`.
 
