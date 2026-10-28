@@ -23,7 +23,7 @@ Mobil-appen bruger Geolocation API, som browsere kun tillader på `https://` ell
 | `Infrastructure (docker compose)` | ✓ | ✓ | task `docker compose up` |
 | `Ingestion – offline` / `lokal` / `LAN` | ✓ | – | ✓ |
 | `Api – offline` / `lokal` / `LAN` (REST + SignalR on port 5262, no UI) | – | ✓ (`processing-server/`) | ✓ |
-| `Dashboard – offline` / `lokal` / `LAN` (the dashboard on port 5111, needs the Api running) | – | ✓ (`dashboard/`) | ✓ |
+| `Dashboard – offline` / `lokal` / `LAN` (the dashboard on port 5111; `offline` uses fake data, `lokal`/`LAN` need the Api running) | – | ✓ (`dashboard/`) | ✓ |
 | `Alt – lokal` / `Alt – LAN` (ingestion + Api + dashboard sammen) | – | – | ✓ |
 
 IntelliJ cannot run .NET and Rider cannot run Maven. Run ingestion from IntelliJ and the Api and dashboard from Rider, or everything from VS Code.
@@ -37,12 +37,16 @@ Hver applikation printer sine links i konsollen, når den er startet:
 ```
 Mobil-app (denne maskine): http://localhost:8080/?event=00000000-0000-0000-0000-000000000001
 Mobil-app (offentligt link via Cloudflare-tunnel): https://<tilfældig>.trycloudflare.com/?event=...   (kun LAN)
-API (this machine): http://localhost:5262
-API (LAN):          http://192.168.x.x:5262                                                         (kun LAN)
-Now listening on: http://localhost:5111                                                              (dashboard)
+API (this machine):        http://localhost:5262
+API (LAN):                 http://192.168.x.x:5262                                                  (kun LAN)
+Dashboard (this machine):  http://localhost:5111
+Dashboard (LAN):           http://192.168.x.x:5111                                                  (kun LAN)
+Dashboard with fake data:  http://localhost:5111/?feed=fake   (no Api needed)
 ```
 
-Open the dashboard at http://localhost:5111. In LAN mode the dashboard's dev server only prints `0.0.0.0`, so use the LAN IP the Api prints with port 5111 instead (e.g. `http://192.168.x.x:5111`).
+The dashboard's dev server cannot print links of its own (it only prints `Now listening on`), so the Api prints the dashboard's links too.
+
+**Fake data:** opening the dashboard with `?feed=fake` (http://localhost:5111/?feed=fake) makes it use random data instead of the Api. `Dashboard – offline` opens that address by itself, so it runs without the Api and docker. Without `?feed=fake` the dashboard always uses the real Api. (The launch profile's environment cannot choose this: .NET 10 fixes a standalone WebAssembly app's environment when it is built.)
 
 RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `crowdcontrol`).
 
@@ -62,6 +66,6 @@ RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `
 
 - **Port 8080, 5262 eller 5111 er optaget:** en anden instans kører allerede, fx fra en anden IDE eller terminal. Stop den først.
 - **Ingen prikker på dashboardet:** ingestion kører i `offline`, så positionerne kun bliver logget. Brug `lokal` eller `LAN`.
-- **The dashboard loads but the map never updates:** the Api is not running, or runs in another mode than the dashboard. Start `Api – …` in the same mode.
+- **The dashboard loads but the map never updates, or shows "An unhandled error has occurred":** the Api is not running, or runs in another mode than the dashboard. Start `Api – …` in the same mode, or open the dashboard with `?feed=fake` to use fake data.
 - **http://localhost:5262 shows 404:** expected. The Api only serves REST and SignalR; the dashboard is on port 5111.
 - **Tunnelen lever videre efter stop:** hvis ingestion blev dræbt hårdt, kan `cloudflared` køre videre. Stop processen `cloudflared` manuelt.

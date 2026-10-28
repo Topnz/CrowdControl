@@ -4,7 +4,7 @@ Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projekt
 
 > **⚠ ÅBEN TODO – Claude skal nævne dette i sit første svar i hver session, indtil punktet er afkrydset:**
 > Dashboardet skal flyttes ud af `processing-server/` til sin egen mappe/solution `dashboard/` på niveau med `mobile-app/`. Den fulde plan står i **afsnit 9.1**. Fjern denne boks, når 9.1 er gennemført.
-> **Status 2026-10-28:** the move itself is done and on `main` (PR #19, #25). What remains is **PR 3b** (split the dashboard into Core/Adapters/UI) and **PR 4** (documentation). The step-by-step plan with reasons is in **section 9.2**.
+> **Status 2026-10-28:** the move itself is done and on `main` (PR #19, #25). **PR 3b** (split the dashboard into Core/Adapters/UI) is built, tested and verified, and opened as a PR from branch `refactor/dashboard-layers`. What remains after it is merged is **PR 4** (documentation). The step-by-step plan with reasons is in **section 9.2**.
 
 ---
 
@@ -217,6 +217,7 @@ Java-adapterne ligger fladt med `adapter-`-præfiks (ikke i en `adapters/`-under
 - `ingestion-server/` er tilføjet via **File → New → Module → Spring Boot** (Maven, Java 21, JDK liberica-21, groupId `dk.crowdcontrol`).
 - IntelliJ kan ikke arbejde ordentligt med C#. `processing-server/` åbnes i **Rider** (`CrowdControl.Processing.sln`). Begge IDE'er peger på samme repo.
 - Udviklingsmiljøet er Windows. Maven køres med `.\mvnw.cmd` fra `ingestion-server/`.
+- Both C# solutions target `net10.0`, so the **.NET 10 SDK** must be installed (`dotnet --list-sdks`). With only SDK 9, every project fails with `NETSDK1045`. `dotnet new classlib` on a machine with SDK 9 also defaults to `net9.0`, so check `TargetFramework` in new projects.
 
 ### 4.1 Kørsel (fælles run-konfigurationer)
 
@@ -538,6 +539,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
+- [ ] **Move main-db off port 5432 (small separate PR, after PR 3b):** a PostgreSQL installed directly on Windows (e.g. the service `postgresql-x64-18`) also uses 5432, so the Api connects to it instead of docker's main-db and fails with `28P01: password authentication failed for user "crowdcontrol"` (found 2026-10-28). Change only the host port, e.g. to 5434: `"5434:5432"` in `docker-compose.yml` (main-db), `Port=5434` in `processing-server/src/CrowdControl.Api/appsettings.json` (`MainDb`), and the port in the docker-compose line of section 9 and in README. The container port stays 5432; event-db (5433) and ingestion are not affected. Until then, stop the Windows service while working on CrowdControl (`Stop-Service postgresql-x64-18`, as admin).
 - [ ] **Central package management:** add a `Directory.Packages.props` to both `processing-server/` and `dashboard/` (separate small PR), so `Microsoft.AspNetCore.*` versions (10.0.13 today) cannot drift apart between the two solutions.
 - [ ] **Open question: where does grid aggregation belong?** §3 says `CrowdControl.Domain` holds grid aggregation, but `GridAggregator` lives in `Application/MonitorEvent/`. Decide whether the aggregation rule moves to `Domain` (e.g. when history, ID-10, makes stored grid cells a domain concept) or whether §3 should be corrected.
 - [ ] **HeatmapSnapshot v2 (later, once events and zones exist in the Api):** add `eventId` to the snapshot and `zoneId` to each `ZoneCount` in `contracts/schemas/signalr/HeatmapSnapshot.v2.json`, so the dashboard can tell events and zones apart by ID instead of by name. v1 deliberately describes the snapshot as the Api sends it today (no IDs), so the dashboard move stays a pure move.
@@ -608,9 +610,9 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 
 - [x] 1. Kontrakter: schemas for heatmap-snapshot (SignalR) og `/history` i `contracts/` (jf. ovenfor). *Heatmap snapshot and `GET /heatmap` are done; `/history` is left as a TODO in `processing-api.yaml` and belongs to ID-10 (Se historik), not to the move.*
 - [x] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR. *Also make capacity nullable (`Zone.Capacity` and the DTO become `int?`): the contract sends `null` for "no capacity", while the code still sends `0`.* **Done:** `HeatmapSnapshot`, `GridCell`, `ZoneCount` and `GridAggregator` live in `Application/MonitorEvent/` (one folder per use case, here UC5 Monitor event). The Api maps them with `ToDto()` in `Api/Contracts/`. `HeatmapSnapshotContractTests` validates the serialized DTO against `HeatmapSnapshot.v1.json`, so CI fails if the DTOs and the contract drift apart. `Shared.ZoneCountDto.Capacity` is also `int?` so the dashboard can still read the snapshot until `Shared` is removed.
-- [~] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1). *Partly done: solution, WASM project and test project (`HeatmapSnapshotContractTests`) exist; Core and Adapters come in PR 3b. The DTOs are in `CrowdControl.Dashboard/Contracts/` until then.*
+- [x] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1). *Done: solution, WASM project and test project in PR 3a; `CrowdControl.Dashboard.Core` (DTOs in `Core/Contracts/`, no packages) and `CrowdControl.Dashboard.Adapters` in PR 3b.*
 - [x] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`. *Done with `git mv` of the whole project (history kept); `Blazor.Bootstrap` removed as unused.*
-- [ ] 4. `Services/MapService.cs` (renamed from `MapServise.cs` in PR 3a) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.
+- [x] 4. `Services/MapService.cs` (renamed from `MapServise.cs` in PR 3a) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend. *Done in PR 3b; `?feed=fake` picks the fake (see 9.2).*
 - [x] 5. **API-adresse:** `ApiBaseUrl` i `wwwroot/appsettings.json` (`http://{host}:5262`) læses af `Services/ApiAddress.cs`, som HttpClient og hub-URL bygges ud fra. Api'et har en CORS-policy (`Dashboard:Origins`, alle origins i Development/Offline), så den del af trin 6 er også gjort.
 - [x] 6. Processing-server: fjern projekter, pakker og referencer jf. tabellen ovenfor, og fjern `UseStaticWebAssets()` (Offline), `UseWebAssemblyDebugging()`, `UseBlazorFrameworkFiles()`, `UseStaticFiles()` og `MapFallbackToFile("index.html")` fra `Program.cs`. Tilføj en CORS-policy for dashboardets origin (konfigurerbar; SignalR kræver `AllowCredentials` + eksplicit origin). *Done: `Shared` deleted, Dashboard and `WebAssembly.Server` removed from the Api, `launchBrowser` is false (the Api has no page), and `StartupLinks` prints the Api's address. CORS was already in place.*
 - [ ] 7. Login (ID-30/31/32), når det implementeres: JWT bearer i Api; dashboardet gemmer tokenet og sender det i `Authorization`-headeren og via `accessTokenFactory` til SignalR. Hub og controllers får `[Authorize]`.
@@ -625,7 +627,15 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 
 **Status:** PR 1 (contract, #19), PR 2 (decouple `Application` from `Shared`) and PR 3a (move to `dashboard/`) are on `main`. PR 2 and 3a landed via #25 (see the lesson below). The dashboard runs standalone on port 5111, and the Api (5262) serves REST + SignalR only.
 
-**Open decision before 3b:** should `Dashboard – offline` use the fake feed (recommended, so the dashboard runs without the Api and docker) or keep calling the Api in `Offline`? The steps below assume the fake feed.
+**Decided (2026-10-28):** `Dashboard – offline` uses the fake feed, so the dashboard runs without the Api and docker. The switch is the URL flag `?feed=fake` (the `offline` profile's `launchUrl`), not the environment: .NET 10 fixes a standalone WASM app's environment at build time (`WasmApplicationEnvironmentName`, written into `dotnet.js`), so the launch profile's `ASPNETCORE_ENVIRONMENT` never reaches the browser. `AddHeatmapFeed(api, useFake)` in Adapters replaces the planned `AddSignalRAdapters()`/`AddFakeAdapters()`. The Api's `StartupLinks` prints the dashboard links, including the fake-data link, since the dashboard's dev server cannot print its own.
+
+**PR 3b progress (2026-10-28):** steps 1–11 are done on branch `refactor/dashboard-layers` and opened as a PR. Verified: `dotnet build` + `dotnet test` green in `dashboard/` and `processing-server/`; `Dashboard – offline` shows fake dots without the Api; `Api – lokal` + `Dashboard – lokal` shows real positions published to the `positions` queue; no references across the two solutions. Small changes from the plan below:
+
+- `AddPointAsync` in `MapService` and `addMapPoint`/`marker` in `map.js` were removed: nothing called them.
+- `HttpClient` stays in `Program.cs` until there is an `Http*Api` adapter (history, login).
+- `FakeHeatmapFeed` has a second constructor (interval + `Random`) and a public `NextSnapshot()`, so tests can be fast and deterministic. DI registers it with a factory, so the parameterless constructor is used.
+- Fake zones: "Bøgescenen Sektion A" (90–100 % of capacity), "Bøgescenen Sektion B" (over capacity) and "Madområdet" (`capacity: null`).
+- The test project references `Core` + `Adapters` instead of the WASM project. `FakeHeatmapFeedTests` checks the contract, the three zone cases and that the feed stops on dispose.
 
 **Lesson about stacked PRs:** #22 and #23 were stacked (`main ← #19 ← #22 ← #23`) and merged within 30 seconds. They went into their already-merged base branches instead of `main`, and #25 had to land them. Avoid stacked PRs. If you use them anyway, merge bottom-up, delete each branch before merging the next, and check that the next PR's base says `main`.
 

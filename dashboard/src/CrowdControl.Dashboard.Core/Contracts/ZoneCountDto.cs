@@ -1,4 +1,4 @@
-namespace CrowdControl.Dashboard.Contracts;
+namespace CrowdControl.Dashboard.Core.Contracts;
 
 public class ZoneCountDto
 {
