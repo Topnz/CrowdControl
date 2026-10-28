@@ -44,6 +44,7 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 | Ingestion-server → Processing-server | Henter aktive events ved opstart | REST, JSON/HTTPS |
 | Processing-server → Main Database | Læser/skriver bruger, events, zoner, heatmap | EF Core, SQL |
 | Processing-server → Dashboard | Pusher live-opdateringer | SignalR, WebSocket |
+| Dashboard → Processing-server | Fetches the current heatmap snapshot (`GET /heatmap`) | REST, JSON/HTTPS |
 | Dashboard → Processing-server | Henter historik | REST, JSON/HTTPS |
 | Dashboard → Processing-server | Henter statisk indhold | HTTPS |
 
@@ -142,10 +143,13 @@ CrowdControl/
 ├── contracts/                       # Det ENESTE der deles på tværs af containere
 │   ├── openapi/
 │   │   ├── ingestion-api.yaml       # POST /positions            (mobil → Java)
-│   │   └── processing-api.yaml      # GET /events/active, /history (→ C#)
+│   │   └── processing-api.yaml      # GET /events/active, /heatmap, /history (→ C#)
 │   ├── asyncapi/
-│   │   └── messaging.yaml           # positions-kø + event-exchange
+│   │   ├── messaging.yaml           # positions-kø + event-exchange
+│   │   └── dashboard.yaml           # SignalR hub /hubs/heatmap (C# → dashboard)
 │   └── schemas/
+│       ├── signalr/                 # messages pushed to the dashboard
+│       │   └── HeatmapSnapshot.v1.json
 │       ├── rabbitMQ/                # beskeder på køen/exchangen
 │       │   ├── PositionReceived.v1.json
 │       │   ├── EventCreated.v1.json
@@ -520,6 +524,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
+- [ ] **HeatmapSnapshot v2 (later, once events and zones exist in the Api):** add `eventId` to the snapshot and `zoneId` to each `ZoneCount` in `contracts/schemas/signalr/HeatmapSnapshot.v2.json`, so the dashboard can tell events and zones apart by ID instead of by name. v1 deliberately describes the snapshot as the Api sends it today (no IDs), so the dashboard move stays a pure move.
 
 ### 9.1 TODO: Flyt dashboardet ud af processing-server
 
@@ -534,6 +539,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 **Plan for `CrowdControl.Shared`:**
 
 1. Beskriv de tre DTO'er som JSON-schemas i `contracts/` **før** noget flyttes: `contracts/schemas/signalr/HeatmapSnapshot.v1.json` (med `Cell` og `ZoneCount`), alternativt som en `dashboard`-kanal i `contracts/asyncapi/messaging.yaml`. REST-endpoints (`/history`, senere events/zoner/login/skift kodeord) beskrives i `contracts/openapi/processing-api.yaml`.
+   **Done:** the schema is used by both the SignalR message `HeatmapUpdated` (`contracts/asyncapi/dashboard.yaml`, a separate file because `messaging.yaml` covers RabbitMQ between Java and C#) and `GET /heatmap` (`processing-api.yaml`). `capacity` is `null` when a zone has no capacity.
 2. **Application må ikke afhænge af DTO'er.** I dag refererer `CrowdControl.Application` til `Shared`, og `GridAggregator` bygger og returnerer `HeatmapSnapshotDto`/`CellDto`/`ZoneCountDto` (testene i `GridAggregatorTests` asserter på dem). Da `Application` ikke må referere `Api` (afhængighedsreglen), skal `GridAggregator` i stedet returnere egne modeltyper, fx `HeatmapSnapshot`, `GridCell`, `ZoneCount` i `CrowdControl.Application` (eller `Domain`). Det matcher `HeatmapSnapshot` i afsnit 6.3. `GridAggregatorTests` opdateres til de nye typer, og `using CrowdControl.Shared;` fjernes.
 3. **Serversiden:** flyt `CellDto`, `HeatmapSnapshotDto` og `ZoneCountDto` ind i `CrowdControl.Api/Contracts/` (namespace `CrowdControl.Api.Contracts`). Det er Api's response-typer og bruges af `HeatmapController`, `HeatmapBroadcaster` og `LatestHeatmap`. Api mapper fra Application-modellen til DTO'en (fx en `ToDto()`-extension i `Api/Contracts/`), før den sendes via SignalR/REST.
 4. **Klientsiden:** dashboardet får sine egne kopier i `CrowdControl.Dashboard.Core/Contracts/`, skrevet i hånden mod schemas/OpenAPI. Kodegenerering (NSwag/Kiota) overvejes, når API'et vokser.
@@ -584,8 +590,8 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 
 **Trin:**
 
-- [ ] 1. Kontrakter: schemas for heatmap-snapshot (SignalR) og `/history` i `contracts/` (jf. ovenfor).
-- [ ] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR.
+- [x] 1. Kontrakter: schemas for heatmap-snapshot (SignalR) og `/history` i `contracts/` (jf. ovenfor). *Heatmap snapshot and `GET /heatmap` are done; `/history` is left as a TODO in `processing-api.yaml` and belongs to ID-10 (Se historik), not to the move.*
+- [ ] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR. *Also make capacity nullable (`Zone.Capacity` and the DTO become `int?`): the contract sends `null` for "no capacity", while the code still sends `0`.*
 - [ ] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1).
 - [ ] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`.
 - [ ] 4. `Services/MapServise.cs` (stavefejl, klassen hedder `MapService`) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.
@@ -609,3 +615,4 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - Ændringer i kommunikationen mellem containere starter i `contracts/`.
 - Java og C# deler aldrig database; migrationer ligger hos den service, der ejer databasen.
 - Kør `.\mvnw.cmd clean verify` (Java) / `dotnet build` + `dotnet test` (C#) efter ændringer.
+- **All new documentation is written in English:** Javadoc, XML doc comments, code comments, README files, descriptions in `contracts/`, and new text in this file. Existing Danish text is not translated unless someone asks; when a Danish comment is rewritten anyway, write the new version in English. User-facing text in the apps (e.g. the consent page) follows the users' language and is not covered by this rule.
