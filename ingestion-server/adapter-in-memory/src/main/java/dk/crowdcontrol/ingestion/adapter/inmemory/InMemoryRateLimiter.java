@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tillader højst én position pr. sessionId inden for minInterval.
- * Husker kun i hukommelsen, så det virker, så længe der kører én ingestion-server.
- * Bemærk: mappet ryddes ikke, så det vokser med én linje pr. enhed.
+ * Allows at most one position per sessionId within minInterval.
+ * Remembers only in memory, so it works as long as a single ingestion-server is running.
+ * Note: the map is never cleared, so it grows by one entry per device.
  */
 @Component
 public class InMemoryRateLimiter implements RateLimiter
@@ -21,21 +21,27 @@ public class InMemoryRateLimiter implements RateLimiter
   private final Map<SessionId, Instant> lastAllowed = new ConcurrentHashMap<>();
   private final Duration minInterval;
 
+  /**
+   * @param minInterval minimum time between two accepted positions from the same device
+   *                    (crowdcontrol.rate-limit.min-interval)
+   */
   public InMemoryRateLimiter(@Value("${crowdcontrol.rate-limit.min-interval}") Duration minInterval)
   {
     this.minInterval = minInterval;
   }
 
   /**
-   * synchronized, så "læs sidste tid, sammenlign, gem ny tid" sker samlet.
-   * Ellers kunne to samtidige requests fra samme enhed begge få lov.
+   * {@inheritDoc}
+   * <p>
+   * synchronized, so "read last time, compare, store new time" happens as one step.
+   * Otherwise two simultaneous requests from the same device could both be allowed.
    */
   @Override public synchronized boolean allow(SessionId sessionId)
   {
     Instant now = Instant.now();
     Instant last = lastAllowed.get(sessionId);
 
-    // Første position fra enheden, eller der er gået mindst minInterval siden sidst
+    // First position from the device, or at least minInterval has passed since the last one
     if (last == null || !now.isBefore(last.plus(minInterval)))
     {
       lastAllowed.put(sessionId, now);

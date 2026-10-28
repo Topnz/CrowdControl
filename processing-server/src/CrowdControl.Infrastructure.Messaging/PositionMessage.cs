@@ -4,10 +4,10 @@ using CrowdControl.Application;
 namespace CrowdControl.Infrastructure.Messaging;
 
 /// <summary>
-/// Læser JSON-beskeden fra positions-køen (PosData i Java).
-/// Web-defaults: camelCase og case-insensitive feltnavne, som Jackson skriver dem.
-/// Alle felter er required i kontrakten, så manglende felter eller null giver JsonException
-/// i stedet for stille standardværdier (fx latitude = 0).
+/// Reads the JSON message from the positions queue (PosData in Java).
+/// Web defaults: camelCase and case-insensitive field names, as Jackson writes them.
+/// All fields are required in the contract, so missing fields or null give a JsonException
+/// instead of silent default values (e.g. latitude = 0).
 /// </summary>
 public static class PositionMessage
 {
@@ -17,7 +17,7 @@ public static class PositionMessage
         RespectNullableAnnotations = true
     };
 
-    /// <exception cref="JsonException">Hvis beskeden ikke er gyldig JSON eller mangler felter.</exception>
+    /// <exception cref="JsonException">If the message is not valid JSON or is missing fields.</exception>
     public static PositionReceived Deserialize(ReadOnlySpan<byte> body)
     {
         return JsonSerializer.Deserialize<PositionReceived>(body, Json)

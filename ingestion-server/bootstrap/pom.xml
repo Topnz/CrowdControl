@@ -59,9 +59,9 @@
 
     <build>
         <plugins>
-            <!-- Mobil-appen serveres som statisk indhold. Kopieres med copy-resources
-                 i stedet for <resources>, så IntelliJ ikke gør mobile-app/ til en
-                 resource-rod i bootstrap (vises ellers som "mobile-app [bootstrap]"). -->
+            <!-- The mobile app is served as static content. Copied with copy-resources
+                 instead of <resources>, so IntelliJ does not make mobile-app/ a
+                 resource root in bootstrap (otherwise shown as "mobile-app [bootstrap]"). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>

@@ -10,6 +10,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests the domain rule in {@link FilteredPosition#from(Event, Position)}: area, time span
+ * and zones, including overlapping zones.
+ */
 class FilteredPositionTest
 {
   private static final Instant START = Instant.parse("2026-07-01T10:00:00Z");
@@ -62,11 +66,13 @@ class FilteredPositionTest
     assertEquals(List.of(zoneA.getId()), result.getZoneIds());
   }
 
+  /** Position with a random session ID and 5 metres accuracy. */
   private static Position positionAt(double lat, double lon, Instant time)
   {
     return new Position(new SessionId(UUID.randomUUID()), new GeoPoint(lat, lon), 5, time);
   }
 
+  /** Square with its south-west corner at (lat, lon) and sides of size degrees. */
   private static Boundary square(double lat, double lon, double size)
   {
     return new Boundary(List.of(

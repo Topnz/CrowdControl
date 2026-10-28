@@ -33,7 +33,7 @@ paths:
           description: Eventet findes ikke eller er afsluttet
   /positions:
     post:
-      summary: Modtag en anonym position fra mobil-appen
+      summary: Modtag en pseudonym position fra mobil-appen
       operationId: postPosition
       requestBody:
         required: true

@@ -1,9 +1,9 @@
 namespace CrowdControl.Application;
 
 /// <summary>
-/// En position, som ingestion-server har godkendt til et aktivt event.
-/// Matcher contracts/schemas/rabbitMQ/PositionReceived.v1.json.
-/// ZoneIds er tom, hvis positionen ligger i eventet, men uden for alle zoner.
+/// A position that ingestion-server has accepted for an active event.
+/// Matches contracts/schemas/rabbitMQ/PositionReceived.v1.json.
+/// ZoneIds is empty if the position is inside the event but outside all zones.
 /// </summary>
 public record PositionReceived(
     Guid SessionId,

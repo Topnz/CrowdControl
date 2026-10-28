@@ -1,4 +1,4 @@
-# Lokal infrastruktur til udvikling: docker compose up -d
+# Local infrastructure for development: docker compose up -d
 services:
   rabbitmq:
     image: rabbitmq:4-management
@@ -9,7 +9,7 @@ services:
       - "5672:5672"     # AMQP
       - "15672:15672"   # Management UI: http://localhost:15672
 
-  # Ejes af processing-server (EF Core migrations)
+  # Owned by processing-server (EF Core migrations)
   main-db:
     image: postgres:17
     environment:
@@ -21,7 +21,7 @@ services:
     volumes:
       - main-db-data:/var/lib/postgresql/data
 
-  # Ejes af ingestion-server (Flyway)
+  # Owned by ingestion-server (Flyway)
   event-db:
     image: postgis/postgis:17-3.5
     environment:

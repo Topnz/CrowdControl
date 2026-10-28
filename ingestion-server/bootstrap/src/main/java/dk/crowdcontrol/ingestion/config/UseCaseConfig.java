@@ -9,13 +9,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Laver services fra application-modulet som Spring-beans. Services har bevidst
- * ingen Spring-annotationer, så de wires her i composition root.
- * Out-portene leveres af adapterne (Spring finder dem ud fra typen).
+ * Creates services from the application module as Spring beans. Services deliberately
+ * have no Spring annotations, so they are wired here in the composition root.
+ * The out-ports are provided by the adapters (Spring finds them by type).
  */
 @Configuration
 class UseCaseConfig
 {
+  /**
+   * @param rateLimiter           InMemoryRateLimiter
+   * @param activeEventRepository InMemoryActiveEventRepository
+   * @param positionPublisher     RabbitPositionPublisher, or LoggingPositionPublisher with the "offline" profile
+   * @return the use case used by PositionController
+   */
   @Bean
   ReceivePositionUseCase receivePositionUseCase(RateLimiter rateLimiter,
       ActiveEventRepository activeEventRepository,

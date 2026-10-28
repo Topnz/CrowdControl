@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * Skriver godkendte positioner til loggen i stedet for at sende dem til RabbitMQ.
- * Kun med profilen "offline", så Java kan køre uden RabbitMQ og processing-server.
+ * Writes accepted positions to the log instead of sending them to RabbitMQ.
+ * Only with the "offline" profile, so Java can run without RabbitMQ and processing-server.
  */
 @Component
 @Profile("offline")

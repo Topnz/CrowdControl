@@ -1,0 +1,19 @@
+@startuml protocol-send-position-fejl
+!include astah-style.iuml
+title Send position_Fejl
+
+participant "Mobil-app" as App
+participant "Ingestion-server" as Ing
+
+App -> Ing : 1: HTTP POST /positions JSON PositionRequest(sessionId, eventId,\nlatitude, longitude, accuracy, timestamp)
+alt ugyldig JSON eller felter mangler
+    Ing --> App : 2: HTTP 400 Bad Request JSON ProblemDetail(status, detail)
+else sessionId har sendt for tit
+    Ing --> App : 2: HTTP 429 Too Many Requests JSON ProblemDetail(status, detail)
+else ukendt event eller uden for område/tidsrum
+    Ing --> App : 2: HTTP 422 Unprocessable Content JSON ProblemDetail(status, detail)
+end
+
+note right of Ing : Hvis positionen afvises, sendes den\nikke videre til RabbitMQ.\nServeren tjekker i rækkefølgen\n400 → 429 → 422.
+
+@enduml

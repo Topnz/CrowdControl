@@ -1,0 +1,27 @@
+@startuml protocol-behandl-position
+!include astah-style.iuml
+title Behandl position
+
+participant "Ingestion-server" as Ing
+participant "RabbitMQ" as MQ
+participant "Processing-server" as Proc
+
+Proc ->> MQ : 1: AMQP queue.declare("positions", durable)
+Proc ->> MQ : 2: AMQP basic.qos(prefetch = 50)
+Proc ->> MQ : 3: AMQP basic.consume("positions", autoAck = false)
+note right of Proc : Prøver at forbinde hvert 5. sekund,\nindtil RabbitMQ svarer
+
+Ing ->> MQ : 4: AMQP queue.declare("positions", durable)
+note left of Ing : Ved første publish
+Ing ->> MQ : 5: AMQP basic.publish("", "positions") JSON PositionReceived(sessionId,\neventId, zoneIds, latitude, longitude, accuracy, timestamp)
+MQ ->> Proc : 5.1: AMQP basic.deliver(deliveryTag) JSON PositionReceived(...)
+
+alt beskeden er gyldig og behandlet
+    Proc ->> MQ : 5.1.1: AMQP basic.ack(deliveryTag)
+else JSON følger ikke kontrakten, eller behandlingen fejler
+    Proc ->> MQ : 5.1.1: AMQP basic.nack(deliveryTag, requeue = false)
+end
+
+note over MQ, Proc : Lukker serveren før ack, leverer RabbitMQ beskeden igen.\nAfviste beskeder kasseres.
+
+@enduml

@@ -4,17 +4,21 @@ import dk.crowdcontrol.ingestion.domain.Position;
 
 import java.util.UUID;
 
+/**
+ * In-port: accept a position from the mobile app (UC2 Share position).
+ * Called by the REST adapter and implemented by ReceivePositionService.
+ */
 public interface ReceivePositionUseCase
 {
   /**
-   * Modtager en position fra mobil-appen og sender den videre til processing-server,
-   * hvis den ligger inden for eventets område og tidsrum.
+   * Receives a position from the mobile app and forwards it to processing-server
+   * if it lies within the event's area and time span.
    *
-   * @param position positionen med det anonyme sessionId
-   * @param eventId  det event, mobil-appen sender til
-   * @throws RateLimitExceededException hvis enheden sender oftere, end rate limiteren tillader
-   * @throws OutsideActiveEventException hvis eventet ikke findes, eller positionen ligger
-   *                                     uden for eventets område eller tidsrum
+   * @param position the position with the pseudonymous sessionId
+   * @param eventId  the event the mobile app is sending to
+   * @throws RateLimitExceededException if the device sends more often than the rate limiter allows
+   * @throws OutsideActiveEventException if the event does not exist, or the position lies
+   *                                     outside the event's area or time span
    */
   void receivePosition(Position position, UUID eventId);
 }
