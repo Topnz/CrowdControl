@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * En position modtaget fra mobil-appen. Indeholder kun et anonymt sessionId,
+ * En position modtaget fra mobil-appen. Indeholder kun et pseudonymt sessionId,
  * ingen oplysninger om personen.
  */
 public class Position

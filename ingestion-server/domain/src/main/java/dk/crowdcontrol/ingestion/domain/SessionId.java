@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Anonymt ID for én enhed. Genereres tilfældigt i browseren ved samtykke og
+ * Pseudonymt ID for én enhed. Genereres tilfældigt i browseren ved samtykke og
  * slettes igen ved stop, så det kan ikke føres tilbage til en person.
  */
 public class SessionId

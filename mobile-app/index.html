@@ -2,14 +2,56 @@
 <html lang="da">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>CrowdControl</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>CrowdControl</h1>
-  <p>Del din position anonymt, så arrangøren kan se, hvor der er mange mennesker.</p>
-  <button id="consent">Jeg accepterer at dele min position</button>
-  <p id="status" aria-live="polite"></p>
+  <header>
+    <h1>Del din position</h1>
+    <!-- ID-15: det vigtigste om data skal stå over samtykke-knappen -->
+    <p class="lead">Vi sender kun din position og et pseudonymt session-ID. Det sammentalte antal personer gemmes i 24 måneder. Læs mere nedenfor.</p>
+    <button id="consent">Jeg accepterer at dele min position</button>
+    <button id="stop" class="stop" hidden>Stop deling</button>
+    <p id="status" aria-live="polite"></p>
+  </header>
+
+  <main>
+    <article class="card">
+      <!-- DUMMY: Arrangørens navn og kontaktoplysninger er opdigtede og skal udskiftes med de rigtige -->
+      <h2>Hvorfor</h2>
+      <p><strong>Eksempel Festival ApS (dummy)</strong> vil gerne vide, hvor mange mennesker der er de forskellige steder på eventet, så de kan undgå trængsel og gøre eventet mere sikkert. Det kan du hjælpe med ved at dele din position, mens du er på eventet.</p>
+
+      <h2>Hvad vi indsamler</h2>
+      <p>Når du trykker "Jeg accepterer", sender din telefon følgende med få sekunders mellemrum:</p>
+      <ul>
+        <li>din position (bredde- og længdegrad)</li>
+        <li>hvor præcis positionen er, i meter</li>
+        <li>tidspunktet</li>
+        <li>et <strong>pseudonymt session-ID</strong></li>
+      </ul>
+      <p>Pseudonymt betyder, at dine positioner får et tilfældigt kendetegn i stedet for dit navn. Session-ID'et laves af din browser, når du giver samtykke, og følger dine positioner, så længe du deler. Det bruges til at se, at positionerne kommer fra samme telefon, og til at forhindre, at én telefon sender for mange positioner. Det indeholder ikke dit navn, dit telefonnummer eller andet om din telefon. Det slettes, når du stopper delingen, og giver du samtykke igen, får du et nyt.</p>
+      <p>Vi beder ikke om navn, e-mail eller login, og vi gemmer ikke din IP-adresse.</p>
+
+      <h2>Hvad dine data bruges til</h2>
+      <p>Positionerne tælles sammen i felter på et kort (et "heatmap") og til antallet af personer i hver zone. Arrangøren kan kun se, hvor mange der er i hvert felt og hver zone. Arrangøren kan ikke se den enkelte person eller følge, hvor du bevæger dig.</p>
+
+      <h2>Hvor længe dine data gemmes</h2>
+      <p>Din præcise position og dit session-ID gemmes ikke. De bruges kun, mens de bliver talt med. Det sammentalte antal personer pr. felt og zone er anonymt og gemmes i <strong>24 måneder</strong>, så arrangøren kan se tilbage på eventet. Derefter slettes det automatisk.</p>
+
+      <h2>Du bestemmer</h2>
+      <ul>
+        <li>Der deles intet, før du trykker "Jeg accepterer".</li>
+        <li>Du kan stoppe når som helst med knappen "Stop deling". Så sendes der ikke flere positioner, og dit session-ID slettes.</li>
+        <li>Delingen stopper automatisk, når eventet slutter.</li>
+        <li>Det er frivilligt at dele, og du kan deltage i eventet på samme måde, uanset om du deler eller ej.</li>
+      </ul>
+
+      <h2>Juridisk</h2>
+      <p>Den dataansvarlige er <strong>Eksempel Festival ApS (dummy)</strong>, Testvej 1, 0000 Eksempelby, CVR 00000000, <a href="mailto:privatliv@eksempel-festival.example">privatliv@eksempel-festival.example</a>. Vi behandler dine data, fordi du har givet samtykke (GDPR artikel 6, stk. 1, litra a). Du kan altid trække dit samtykke tilbage. Det, der allerede er talt med, påvirkes ikke. Da vi ikke ved, hvem du er, kan vi som regel ikke finde netop dine data frem. Du kan klage til Datatilsynet (<a href="https://www.datatilsynet.dk">datatilsynet.dk</a>).</p>
+    </article>
+  </main>
+
   <noscript>Siden kræver JavaScript for at kunne dele din position.</noscript>
   <script src="app.js"></script>
 </body>
