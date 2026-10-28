@@ -1,4 +1,4 @@
-﻿using CrowdControl.Shared;
+﻿using CrowdControl.Application.MonitorEvent;
 
 namespace CrowdControl.Application.Tests;
 
@@ -12,8 +12,8 @@ public class GridAggregatorTests
         aggregator.Add(0.0011, 0.0011);
         aggregator.Add(0.00115, 0.00115);
 
-        HeatmapSnapshotDto snapshot = aggregator.GetSnapshot();
-        CellDto cell = Assert.Single(snapshot.Cells);
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
+        GridCell cell = Assert.Single(snapshot.Cells);
         Assert.Equal(2, cell.Count);
     }
 
@@ -25,7 +25,7 @@ public class GridAggregatorTests
         aggregator.Add(0.0011, 0.0011);
         aggregator.Add(0.0091, 0.0091);
 
-        HeatmapSnapshotDto snapshot = aggregator.GetSnapshot();
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
         Assert.Equal(2, snapshot.Cells.Count);
     }
 
@@ -36,8 +36,8 @@ public class GridAggregatorTests
 
         aggregator.Add(0.0011, 0.0011);
 
-        HeatmapSnapshotDto snapshot = aggregator.GetSnapshot();
-        ZoneCountDto zone = Assert.Single(snapshot.Zones);
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
+        ZoneCount zone = Assert.Single(snapshot.Zones);
         Assert.Equal(1, zone.Count);
     }
 
@@ -48,8 +48,8 @@ public class GridAggregatorTests
 
         aggregator.Add(0.0091, 0.0091);
 
-        HeatmapSnapshotDto snapshot = aggregator.GetSnapshot();
-        ZoneCountDto zone = Assert.Single(snapshot.Zones);
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
+        ZoneCount zone = Assert.Single(snapshot.Zones);
         Assert.Equal(0, zone.Count);
     }
 
@@ -61,10 +61,23 @@ public class GridAggregatorTests
 
         aggregator.Reset();
 
-        HeatmapSnapshotDto snapshot = aggregator.GetSnapshot();
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
         Assert.Empty(snapshot.Cells);
-        ZoneCountDto zone = Assert.Single(snapshot.Zones);
+        ZoneCount zone = Assert.Single(snapshot.Zones);
         Assert.Equal(0, zone.Count);
+    }
+
+    [Fact]
+    public void GetSnapshot_ZoneWithoutCapacity_GivesNullCapacity()
+    {
+        Event ev = CreateTestEvent();
+        ev.Zones[0].Capacity = null;
+        GridAggregator aggregator = new GridAggregator(ev);
+
+        HeatmapSnapshot snapshot = aggregator.GetSnapshot();
+
+        ZoneCount zone = Assert.Single(snapshot.Zones);
+        Assert.Null(zone.Capacity);
     }
 
     // Event from (0, 0) to (0.01, 0.01) with one zone in the lower-left corner

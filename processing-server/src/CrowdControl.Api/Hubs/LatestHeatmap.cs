@@ -1,4 +1,4 @@
-using CrowdControl.Shared;
+using CrowdControl.Api.Contracts;
 
 namespace CrowdControl.Api.Hubs;
 

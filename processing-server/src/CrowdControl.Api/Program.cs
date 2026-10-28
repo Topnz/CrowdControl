@@ -1,21 +1,18 @@
 using CrowdControl.Api;
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
+using CrowdControl.Application.MonitorEvent;
 using CrowdControl.Infrastructure.Messaging;
 using CrowdControl.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Static web assets (Dashboard) are only loaded automatically in Development
-if (builder.Environment.IsEnvironment("Offline"))
-    builder.WebHost.UseStaticWebAssets();
-
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
-// The dashboard can run on its own origin (the launch profiles in CrowdControl.Dashboard, port 5111).
+// The dashboard runs on its own origin (dashboard/, port 5111) and calls the Api from there.
 // SignalR requires AllowCredentials and therefore explicit origins. In Development/Offline all
 // origins are allowed, since LAN mode opens the dashboard via changing LAN IPs.
 string[] dashboardOrigins = builder.Configuration.GetSection("Dashboard:Origins").Get<string[]>() ?? [];
@@ -82,18 +79,10 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Offline"))
     scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
 }
 
-if (app.Environment.IsDevelopment())
-    app.UseWebAssemblyDebugging();
-
-// Serves the Blazor WASM dashboard (CrowdControl.Dashboard)
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
-
 app.UseCors();
 
 app.MapControllers();
 app.MapHub<HeatmapHub>("/hubs/heatmap");
-app.MapFallbackToFile("index.html");
 
 StartupLinks.PrintOnStarted(app);
 

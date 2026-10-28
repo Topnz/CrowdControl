@@ -1,4 +1,4 @@
-using CrowdControl.Shared;
+using CrowdControl.Dashboard.Contracts;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 

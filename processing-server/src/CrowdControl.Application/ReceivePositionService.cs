@@ -1,3 +1,5 @@
+using CrowdControl.Application.MonitorEvent;
+
 namespace CrowdControl.Application;
 
 public class ReceivePositionService : IReceivePositionUseCase

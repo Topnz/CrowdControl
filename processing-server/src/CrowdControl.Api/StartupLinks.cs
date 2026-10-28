@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 
 namespace CrowdControl.Api;
 
-// Prints links to the dashboard once the Api has started. If the Api listens on all
-// network interfaces (the "lan" launch profile), a link per LAN address is printed too.
+// Prints the Api's address once it has started. If the Api listens on all network interfaces
+// (the "lan" launch profile), an address per LAN IP is printed too. The dashboard (port 5111)
+// is opened on the same host name, so these IPs are also the ones to use for the dashboard.
 public static class StartupLinks
 {
     // Virtual network interfaces (Docker, WSL, Hyper-V, VPN) that others on the network cannot reach
@@ -25,13 +26,13 @@ public static class StartupLinks
                 Uri uri = new Uri(address.Replace("://*", "://0.0.0.0").Replace("://+", "://0.0.0.0"));
                 if (uri.Host == "0.0.0.0" || uri.Host == "[::]")
                 {
-                    links.Add($"Dashboard (denne maskine): {uri.Scheme}://localhost:{uri.Port}");
+                    links.Add($"API (this machine): {uri.Scheme}://localhost:{uri.Port}");
                     foreach (string ip in LanAddresses())
-                        links.Add($"Dashboard (LAN):           {uri.Scheme}://{ip}:{uri.Port}");
+                        links.Add($"API (LAN):          {uri.Scheme}://{ip}:{uri.Port}");
                 }
                 else
                 {
-                    links.Add($"Dashboard (denne maskine): {address}");
+                    links.Add($"API (this machine): {address}");
                 }
             }
 
