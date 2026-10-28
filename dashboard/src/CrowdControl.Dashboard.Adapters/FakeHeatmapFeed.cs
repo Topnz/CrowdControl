@@ -19,7 +19,7 @@ public class FakeHeatmapFeed : IHeatmapFeed
 
     private readonly TimeSpan _interval;
     private readonly Random _random;
-    private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _cancellationSource;
     private Task? _loop;
 
     public event Func<HeatmapSnapshotDto, Task>? SnapshotReceived;
@@ -37,8 +37,8 @@ public class FakeHeatmapFeed : IHeatmapFeed
 
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _loop = RunAsync(_cts.Token);
+        _cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _loop = RunAsync(_cancellationSource.Token);
         return Task.CompletedTask;
     }
 
@@ -76,15 +76,15 @@ public class FakeHeatmapFeed : IHeatmapFeed
         };
 
         // Cells cluster around the middle of the grid; only cells with positions are sent
-        for (int x = 0; x < GridSize; x++)
+        for (int column = 0; column < GridSize; column++)
         {
-            for (int y = 0; y < GridSize; y++)
+            for (int row = 0; row < GridSize; row++)
             {
-                double distance = Math.Sqrt(Math.Pow(x - GridSize / 2.0, 2) + Math.Pow(y - GridSize / 2.0, 2));
+                double distance = Math.Sqrt(Math.Pow(column - GridSize / 2.0, 2) + Math.Pow(row - GridSize / 2.0, 2));
                 int count = (int)(_random.Next(0, 12) - distance);
                 if (count > 0)
                 {
-                    snapshot.Cells.Add(new CellDto { X = x, Y = y, Count = count });
+                    snapshot.Cells.Add(new CellDto { X = column, Y = row, Count = count });
                 }
             }
         }
@@ -98,15 +98,15 @@ public class FakeHeatmapFeed : IHeatmapFeed
 
     public async ValueTask DisposeAsync()
     {
-        if (_cts != null)
+        if (_cancellationSource != null)
         {
-            await _cts.CancelAsync();
+            await _cancellationSource.CancelAsync();
             if (_loop != null)
             {
                 await _loop;
             }
-            _cts.Dispose();
-            _cts = null;
+            _cancellationSource.Dispose();
+            _cancellationSource = null;
             _loop = null;
         }
     }
