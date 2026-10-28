@@ -32,7 +32,7 @@ public class MobileAppLinks
   /**
    * Writes the link to the log surrounded by blank lines, so it is easy to find.
    *
-   * @param label   description of the link, e.g. "Mobil-app (denne maskine)"
+   * @param label   description of the link, e.g. "Mobile app (this machine)"
    * @param baseUrl the server's address without a trailing slash, e.g. http://localhost:8080
    */
   public void print(String label, String baseUrl)

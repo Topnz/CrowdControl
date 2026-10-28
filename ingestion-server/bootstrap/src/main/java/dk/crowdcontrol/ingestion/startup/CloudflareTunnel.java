@@ -86,7 +86,7 @@ class CloudflareTunnel
         if (!found && matcher.find())
         {
           found = true;
-          links.print("Mobil-app (offentligt link via Cloudflare-tunnel)", matcher.group());
+          links.print("Mobile app (public link via Cloudflare tunnel)", matcher.group());
         }
       }
     }

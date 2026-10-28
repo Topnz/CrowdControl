@@ -141,7 +141,7 @@ package "processing-server (C#)" {
     }
     class "Zone" as CZone {
       + Name : string
-      + Capacity : int
+      + Capacity : int?
     }
     class "Position" as CPosition {
       + Timestamp : DateTime
@@ -182,16 +182,10 @@ package "processing-server (C#)" {
       - _cellSizeLat : double
       - _cellSizeLon : double
       + Add(latitude : double, longitude : double) : void
-      + GetSnapshot() : HeatmapSnapshotDto
+      + GetSnapshot() : HeatmapSnapshot
       + Reset() : void
     }
-    class PolygonHelper <<static>> {
-      + {static} IsInside(corners : IReadOnlyList<GeoPoint>, point : GeoPoint) : bool
-    }
-  }
-
-  package "CrowdControl.Shared" as cshared {
-    class HeatmapSnapshotDto {
+    class HeatmapSnapshot {
       + EventName : string
       + Timestamp : DateTime
       + MinLat : double
@@ -199,15 +193,18 @@ package "processing-server (C#)" {
       + CellSizeLat : double
       + CellSizeLon : double
     }
-    class CellDto {
+    class GridCell {
       + X : int
       + Y : int
       + Count : int
     }
-    class ZoneCountDto {
+    class ZoneCount {
       + Name : string
-      + Capacity : int
+      + Capacity : int?
       + Count : int
+    }
+    class PolygonHelper <<static>> {
+      + {static} IsInside(corners : IReadOnlyList<GeoPoint>, point : GeoPoint) : bool
     }
   }
 
@@ -241,21 +238,85 @@ package "processing-server (C#)" {
     }
     class HeatmapHub
     class HeatmapBroadcaster
-    class LatestHeatmap
+    class LatestHeatmap {
+      + Snapshot : HeatmapSnapshotDto?
+    }
     class StartupLinks <<static>>
+    class HeatmapSnapshotMapping <<static>> {
+      + {static} ToDto(snapshot : HeatmapSnapshot) : HeatmapSnapshotDto
+    }
+    class "HeatmapSnapshotDto" as ApiSnapshotDto {
+      + EventName : string
+      + Timestamp : DateTime
+      + MinLat : double
+      + MinLon : double
+      + CellSizeLat : double
+      + CellSizeLon : double
+    }
+    class "CellDto" as ApiCellDto {
+      + X : int
+      + Y : int
+      + Count : int
+    }
+    class "ZoneCountDto" as ApiZoneCountDto {
+      + Name : string
+      + Capacity : int?
+      + Count : int
+    }
+  }
+}
+
+package "dashboard (C#)" {
+  package "CrowdControl.Dashboard.Core" as dcore {
+    interface IHeatmapFeed {
+      + SnapshotReceived : event Func<HeatmapSnapshotDto, Task>
+      + StartAsync(ct : CancellationToken) : Task
+      + DisposeAsync() : ValueTask
+    }
+    class "HeatmapSnapshotDto" as DashSnapshotDto {
+      + EventName : string
+      + Timestamp : DateTime
+      + MinLat : double
+      + MinLon : double
+      + CellSizeLat : double
+      + CellSizeLon : double
+    }
+    class "CellDto" as DashCellDto {
+      + X : int
+      + Y : int
+      + Count : int
+    }
+    class "ZoneCountDto" as DashZoneCountDto {
+      + Name : string
+      + Capacity : int?
+      + Count : int
+    }
   }
 
-  package "CrowdControl.Dashboard" as cdash {
-    class MapService {
-      - _mapInitialized : bool
-      + InitializeAsync() : Task
-      + AddPointAsync(latitude : double, longitude : double) : Task
-      + DisposeAsync() : ValueTask
+  package "CrowdControl.Dashboard.Adapters" as dadapters {
+    class SignalRHeatmapFeed {
+      - _hub : HubConnection?
+    }
+    class FakeHeatmapFeed {
+      - _interval : TimeSpan
+      - _random : Random
+      + NextSnapshot() : HeatmapSnapshotDto
     }
     class ApiAddress <<record>> {
       BaseUrl : Uri
       + {static} From(template : string?, dashboardAddress : Uri) : ApiAddress
       + Resolve(path : string) : Uri
+    }
+    class ServiceCollectionExtensions <<static>> {
+      + {static} AddHeatmapFeed(api : ApiAddress, useFake : Func<IServiceProvider, bool>) : IServiceCollection
+    }
+  }
+
+  package "CrowdControl.Dashboard" as dui {
+    class MapService {
+      - _mapInitialized : bool
+      + InitializeAsync() : Task
+      + DisposeAsync() : ValueTask
     }
     class Home <<razor>>
   }
@@ -297,31 +358,49 @@ CZone "1" *-- "1" CBoundary : Boundary
 CPosition --> "1" CGeoPoint
 HistoryEntry --> "1" CEvent
 
-' --- C#: application, infrastructure, api and dashboard
+' --- C#: application, infrastructure and api
 CReceive ..|> IReceivePositionUseCase
 CReceive --> GridAggregator
 GridAggregator --> "0..*" CZone
 GridAggregator ..> PolygonHelper
-GridAggregator *-- "0..*" CellDto
-GridAggregator *-- "0..*" ZoneCountDto
-GridAggregator ..> HeatmapSnapshotDto : <<create>>
-HeatmapSnapshotDto *-- "0..*" CellDto : Cells
-HeatmapSnapshotDto *-- "0..*" ZoneCountDto : Zones
+GridAggregator *-- "0..*" GridCell
+GridAggregator *-- "0..*" ZoneCount
+GridAggregator ..> HeatmapSnapshot : <<create>>
+HeatmapSnapshot *-- "0..*" GridCell : Cells
+HeatmapSnapshot *-- "0..*" ZoneCount : Zones
 RabbitMqPositionConsumer --> RabbitMqOptions
 RabbitMqPositionConsumer ..> PositionMessage
 RabbitMqPositionConsumer ..> IReceivePositionUseCase
 PositionMessage ..> PositionReceived
 HeatmapBroadcaster --> GridAggregator
+HeatmapBroadcaster ..> HeatmapSnapshotMapping : ToDto()
 HeatmapBroadcaster --> LatestHeatmap
 HeatmapBroadcaster ..> HeatmapHub : IHubContext
-LatestHeatmap --> "0..1" HeatmapSnapshotDto : Snapshot
+HeatmapSnapshotMapping ..> HeatmapSnapshot
+HeatmapSnapshotMapping ..> ApiSnapshotDto : <<create>>
+ApiSnapshotDto *-- "0..*" ApiCellDto : Cells
+ApiSnapshotDto *-- "0..*" ApiZoneCountDto : Zones
+LatestHeatmap --> "0..1" ApiSnapshotDto : Snapshot
 HeatmapController --> LatestHeatmap
+
+' --- C#: dashboard (Core <- Adapters <- Dashboard)
+DashSnapshotDto *-- "0..*" DashCellDto : Cells
+DashSnapshotDto *-- "0..*" DashZoneCountDto : Zones
+IHeatmapFeed ..> DashSnapshotDto
+SignalRHeatmapFeed ..|> IHeatmapFeed
+SignalRHeatmapFeed --> ApiAddress
+FakeHeatmapFeed ..|> IHeatmapFeed
+ServiceCollectionExtensions ..> SignalRHeatmapFeed : <<create>>
+ServiceCollectionExtensions ..> FakeHeatmapFeed : <<create>>
 Home --> MapService
-MapService --> ApiAddress
-MapService ..> HeatmapSnapshotDto
+MapService --> IHeatmapFeed
 
 note "Java -> RabbitMQ -> C#: PosData serialiseres til JSON\nog læses som PositionReceived (samme felter).\nIngen kodeafhængighed - kontrakten er\ncontracts/schemas/rabbitMQ/PositionReceived.v1.json" as N1
 PosData .. N1
 N1 .. PositionReceived
+
+note "Api -> SignalR/REST -> dashboard: the two sets of DTOs\nare separate copies with no code dependency.\nThe contract is\ncontracts/schemas/signalr/HeatmapSnapshot.v1.json" as N2
+ApiSnapshotDto .. N2
+N2 .. DashSnapshotDto
 
 @enduml
