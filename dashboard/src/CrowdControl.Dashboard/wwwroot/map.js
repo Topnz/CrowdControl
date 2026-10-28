@@ -25,15 +25,15 @@ window.renderHeatmap = function (snapshot) {
     if (!map || !heatLayer) return;
     heatLayer.clearLayers();
 
-    const max = Math.max(1, ...snapshot.cells.map(c => c.count));
+    const maxCount = Math.max(1, ...snapshot.cells.map(cell => cell.count));
     for (const cell of snapshot.cells) {
         const lat = snapshot.minLat + (cell.y + 0.5) * snapshot.cellSizeLat;
         const lon = snapshot.minLon + (cell.x + 0.5) * snapshot.cellSizeLon;
-        const t = cell.count / max;
+        const intensity = cell.count / maxCount;
         // green (low) → red (high)
-        const color = `hsl(${Math.round(120 * (1 - t))}, 90%, 45%)`;
+        const color = `hsl(${Math.round(120 * (1 - intensity))}, 90%, 45%)`;
         L.circleMarker([lat, lon], {
-            radius: 4 + 6 * t,
+            radius: 4 + 6 * intensity,
             color: color,
             fillColor: color,
             fillOpacity: 0.7,

@@ -98,6 +98,42 @@ Konsekvenser for arkitekturen:
   4. Arrangøren tegner eventets område som en polygon ved at vælge hjørnerne.
   5. Systemet gemmer eventet.
 
+### 1.3 Heatmap grid: how it works and what was considered (2026-10-28)
+
+**How positions become cells** (`GridAggregator.Add` in `processing-server/src/CrowdControl.Application/MonitorEvent/`):
+
+```csharp
+int x = (int)Math.Floor((longitude - _minLon) / _cellSizeLon);
+int y = (int)Math.Floor((latitude - _minLat) / _cellSizeLat);
+```
+
+- The origin is the south-west corner of the event polygon's bounding box (the smallest latitude and longitude of its corners). The maximum is not used.
+- The cell size is **fixed**: `cellSizeLat` 0.0002° and `cellSizeLon` 0.00035°, about 22 × 22 m at 55° N (a degree of longitude is shorter than a degree of latitude there, which the larger `cellSizeLon` compensates for).
+- So `x` is "how many whole cells east of the origin", **not a percentage** of the polygon's width. A percentage would be `(longitude - minLon) / (maxLon - minLon)` and would make cells grow with the event. Here a larger event gets more cells, not larger cells, so the counts in all cells are comparable as density. Example: a position 100 m east and 50 m north of the origin is cell (floor(100/22), floor(50/22)) = (4, 2), however large the event is.
+- The `GridAggregator(string eventName)` constructor, used until events exist in the Api, puts the origin at (0, 0). That is why indices like `x = 35922` appear in `lokal` mode today. It still works, because the cells have the same size; the origin is just far away.
+
+**Polygons with irregular shapes** (L-shaped, rotated, jagged):
+
+- The grid covers the polygon's bounding box, so some cells lie fully or partly outside the polygon.
+- Cells fully outside never get positions: ingestion rejects positions outside the event's area, and a snapshot only contains cells with at least one position. Those cells are never sent or drawn.
+- Cells on the polygon's edge only count the positions that are inside the area. The edge looks stepped at the cell resolution (about 22 m); a smaller cell size gives a finer edge.
+- Zone counts do not depend on the grid at all: `PolygonHelper.IsInside` tests each position against the zone's exact polygon, whatever its shape.
+
+**Alternatives considered:**
+
+- **Polar coordinates (distance and angle from the event's centre)** were suggested for irregular polygons and **rejected**:
+  - Rings and sectors give cells whose area grows with the distance from the centre, so the same count means a different density depending on where the cell is. The centre looks empty and the edge looks full at the same density. A heatmap shows density, so it needs equal-area cells (squares or hexagons).
+  - An irregular polygon has no natural centre. For a long or L-shaped area, rings around a centre fit the shape worse than squares, and polar cells stick out of the polygon just as much.
+  - Distances in metres need a projection from latitude/longitude.
+- **Sending each cell's centre (latitude/longitude) instead of its indices:** **keep the indices.**
+  - `(x, y)` is the cell's identity. History (ID-10, ID-38) stores aggregated cells and plays them back over time, which needs an exact key to sum and compare on. Doubles have rounding problems when finding "the same cell" in two snapshots.
+  - The server counts in indices anyway; the snapshot shows the grid as it is.
+  - The client can compute a cell's centre or corners in one line (`minLon + (x + 0.5) * cellSizeLon`, see `map.js`). If that becomes a burden, `HeatmapSnapshot.v2` can send the centre as well as the indices.
+- **Renaming `x`/`y` to `column`/`row`:** the contract describes them as "Column index" and "Row index", but renaming the JSON fields breaks the contract. Do it in `HeatmapSnapshot.v2` together with `eventId` and `zoneId` (section 9), so there is one breaking change instead of two. Until then `GridCell` and the DTOs keep `X`/`Y`, so the Application model, the DTOs and the contract use the same names. Local loop variables can be named `column`/`row` (as in `FakeHeatmapFeed`).
+- **A rotated grid:** if an event area lies at an angle (rows of stalls and stages not aligned north/south), the grid can be rotated along the polygon's main axis, with the angle sent in the snapshot (`rotation`). The cells stay equal-area squares. Only worth doing if it actually looks wrong on the map.
+
+Changing the aggregation or the snapshot affects `GridAggregator`, the contract (a new version), both sets of DTOs and history, so agree on it first.
+
 ---
 
 ## 2. Grundprincip: uafhængigt arbejde via Dependency Inversion
