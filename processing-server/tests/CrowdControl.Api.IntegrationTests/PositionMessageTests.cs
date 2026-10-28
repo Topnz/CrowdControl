@@ -6,8 +6,8 @@ using CrowdControl.Infrastructure.Messaging;
 namespace CrowdControl.Api.IntegrationTests;
 
 /// <summary>
-/// Tjekker, at C# kan læse den JSON, ingestion-server sender (PositionReceived.v1.json).
-/// JSON'en er den samme som i PosDataTest i adapter-rabbit-out, så de to sider testes mod samme besked.
+/// Checks that C# can read the JSON that ingestion-server sends (PositionReceived.v1.json).
+/// The JSON is the same as in PosDataTest in adapter-rabbit-out, so both sides are tested against the same message.
 /// </summary>
 public class PositionMessageTests
 {

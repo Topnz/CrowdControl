@@ -1,0 +1,28 @@
+@startuml protocol-event-changes
+!include astah-style.iuml
+title Event-ændringer (planlagt)
+
+participant "Ingestion-server" as Ing
+participant "RabbitMQ" as MQ
+participant "Processing-server" as Proc
+participant "Dashboard" as Dash
+
+Ing -> Proc : 1: HTTP GET /events/active
+Proc --> Ing : 2: HTTP 200 JSON List<Event(eventId, name, startTime, endTime,\nsendIntervalSeconds, area, zones)>
+note left of Ing : Ved opstart
+
+Dash -> Proc : 3: Opret, ret eller slet event eller zone
+alt event oprettet
+    Proc ->> MQ : 3.1: AMQP basic.publish("event-changes", "event.created")\nJSON EventCreated(eventId, name, startTime, endTime, sendIntervalSeconds, area, zones)
+    MQ ->> Ing : 3.2: AMQP basic.deliver JSON EventCreated(...)
+else event eller zone ændret
+    Proc ->> MQ : 3.1: AMQP basic.publish("event-changes", "event.updated")\nJSON EventUpdated(eventId, name, startTime, endTime, sendIntervalSeconds, area, zones)
+    MQ ->> Ing : 3.2: AMQP basic.deliver JSON EventUpdated(...)
+else event slettet
+    Proc ->> MQ : 3.1: AMQP basic.publish("event-changes", "event.deleted")\nJSON EventDeleted(eventId)
+    MQ ->> Ing : 3.2: AMQP basic.deliver JSON EventDeleted(eventId)
+end
+
+note over Ing, Dash : Planlagt – ikke implementeret endnu.\nEndpoints mellem dashboard og processing-server er ikke aftalt.\nEn ændring skal nå ingestion-server inden for 30 sekunder (ID-35).
+
+@enduml

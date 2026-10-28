@@ -18,7 +18,7 @@ public class HeatmapController : ControllerBase
     [HttpGet]
     public ActionResult<HeatmapSnapshotDto> GetSnapshot()
     {
-        // Intet snapshot før broadcasteren har kørt første gang (efter 3 sekunder)
+        // No snapshot until the broadcaster has run for the first time (after 3 seconds)
         if (_latest.Snapshot == null)
         {
             return NoContent();

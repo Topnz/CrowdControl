@@ -1,8 +1,8 @@
 namespace CrowdControl.Application;
 
 /// <summary>
-/// In-port: kaldes af messaging-adapteren for hver position på positions-køen.
-/// Beskeden ack'es først, når HandleAsync er færdig.
+/// In-port: called by the messaging adapter for each position on the positions queue.
+/// The message is only acked once HandleAsync has finished.
 /// </summary>
 public interface IReceivePositionUseCase
 {

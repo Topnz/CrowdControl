@@ -1,6 +1,6 @@
 # Ikke-funktionelle krav – CrowdControl (FURPS+)
 
-Kravene er afledt af arkitekturen (C2, `CLAUDE.md`) og user stories i `docs/user-stories.md` / Jira. Tal markeret med **(forslag)** er ikke aftalt endnu og bør bekræftes af holdet, før de bruges som acceptkriterier.
+Kravene er afledt af arkitekturen (C2, `CLAUDE.md`) og user stories i `docs/architecture/analyse/krav/user-stories.md` / Jira. Tal markeret med **(forslag)** er ikke aftalt endnu og bør bekræftes af holdet, før de bruges som acceptkriterier.
 
 **FURPS+**
 
@@ -17,7 +17,7 @@ Kravene er afledt af arkitekturen (C2, `CLAUDE.md`) og user stories i `docs/user
 
 | ID | Krav | Måling / verifikation | Relation |
 |---|---|---|---|
-| NFR-F1 | Deltagere er anonyme: der sendes og gemmes kun koordinater, nøjagtighed, tidspunkt og et tilfældigt session-ID. Ingen navne, IP-adresser eller device-ID'er gemmes. | Gennemgang af `contracts/` og databaseskemaer; test af at IP-adresser ikke logges sammen med positioner. | ID-16, ID-40 |
+| NFR-F1 | Deltagere er pseudonyme: der sendes og gemmes kun koordinater, nøjagtighed, tidspunkt og et tilfældigt session-ID. Ingen navne, IP-adresser eller device-ID'er gemmes. | Gennemgang af `contracts/` og databaseskemaer; test af at IP-adresser ikke logges sammen med positioner. | ID-16, ID-40 |
 | NFR-F2 | Rå positioner persisteres ikke. Processing-server gemmer kun aggregerede grid-celler og zonetal. | Skemagennemgang af Main Database og Event-database. | ID-39, arkitektur |
 | NFR-F3 | Al trafik mellem browser og servere sker over HTTPS. | Konfigurationsgennemgang; HTTP omdirigeres til HTTPS i produktion. | C2 |
 | NFR-F4 | Dashboard og API kræver login. Kun `POST /positions`, event-indstillinger til mobil-appen og statisk indhold er åbne. | Integrationstest: kald uden token giver HTTP 401. | ID-19 |

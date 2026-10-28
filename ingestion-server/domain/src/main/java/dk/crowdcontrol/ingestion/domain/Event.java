@@ -7,7 +7,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Kopi af et event fra processing-server: tidsrum, område, sendeinterval og zoner.
+ * Copy of an event from processing-server: time span, area, send interval and zones.
+ * Used to decide whether a position is accepted and which zones it lies in.
  */
 public class Event
 {
@@ -19,6 +20,18 @@ public class Event
   private final Boundary perimeter;
   private final List<Zone> zones;
 
+  /**
+   * @param id           the event's ID from processing-server
+   * @param name         the event's name
+   * @param startTime    start time (inclusive)
+   * @param endTime      end time (exclusive); must be after startTime
+   * @param sendInterval how often the mobile app should send the position (ID-29)
+   * @param perimeter    the event's area
+   * @param zones        the event's zones; copied to an unmodifiable list
+   * @throws IllegalArgumentException if endTime is not after startTime
+   * @throws NullPointerException     if id, startTime, endTime, sendInterval, perimeter
+   *                                  or zones is null
+   */
   public Event(UUID id, String name, Instant startTime, Instant endTime,
                Duration sendInterval, Boundary perimeter, List<Zone> zones)
   {
@@ -33,53 +46,72 @@ public class Event
     this.zones = List.copyOf(zones);
   }
 
+  /** @return the event's ID */
   public UUID getId()
   {
     return id;
   }
 
+  /** @return the event's name */
   public String getName()
   {
     return name;
   }
 
+  /** @return the start time (inclusive) */
   public Instant getStartTime()
   {
     return startTime;
   }
 
+  /** @return the end time (exclusive) */
   public Instant getEndTime()
   {
     return endTime;
   }
 
+  /** @return how often the mobile app should send the position */
   public Duration getSendInterval()
   {
     return sendInterval;
   }
 
+  /** @return the event's area */
   public Boundary getPerimeter()
   {
     return perimeter;
   }
 
+  /** @return the event's zones as an unmodifiable list */
   public List<Zone> getZones()
   {
     return zones;
   }
 
+  /**
+   * @param time the time to check
+   * @return true if the time is at or after the start time and before the end time
+   */
   public boolean isActiveAt(Instant time)
   {
     return !time.isBefore(startTime) && time.isBefore(endTime);
   }
 
-  /** Sand hvis positionen ligger inden for eventets område og tidsrum. */
+  /**
+   * @param position the position to check
+   * @return true if the position lies within the event's area and time span
+   */
   public boolean accepts(Position position)
   {
     return isActiveAt(position.getTimestamp()) && perimeter.contains(position.getGeoPoint());
   }
 
-  /** De zoner, punktet ligger i. Zoner kan overlappe, så der kan være flere. */
+  /**
+   * Finds the zones the point lies in. Zones can overlap, so there can be several.
+   *
+   * @param point the point to check
+   * @return the zones containing the point; empty if it lies outside all zones
+   */
   public List<Zone> zonesContaining(GeoPoint point)
   {
     return zones.stream().filter(zone -> zone.contains(point)).toList();

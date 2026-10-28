@@ -15,9 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Starter en Cloudflare quick tunnel (cloudflared) til serveren og printer det offentlige
- * HTTPS-link til mobil-appen. Tunnelen lukkes sammen med serveren.
- * Slås til med crowdcontrol.tunnel.enabled (profilen "lan").
+ * Starts a Cloudflare quick tunnel (cloudflared) to the server and prints the public
+ * HTTPS link to the mobile app. The tunnel is closed together with the server.
+ * Turned on with crowdcontrol.tunnel.enabled (the "lan" profile).
  */
 @Component
 @ConditionalOnProperty(name = "crowdcontrol.tunnel.enabled", havingValue = "true")
@@ -25,17 +25,24 @@ class CloudflareTunnel
 {
   private static final Logger log = LoggerFactory.getLogger(CloudflareTunnel.class);
 
-  // cloudflared skriver det tilfældige link i sin log, fx https://abc-def.trycloudflare.com
+  // cloudflared writes the random link in its log, e.g. https://abc-def.trycloudflare.com
   private static final Pattern TUNNEL_URL = Pattern.compile("https://[a-z0-9-]+\\.trycloudflare\\.com");
 
   private final MobileAppLinks links;
   private Process process;
 
+  /** @param links prints the link when the tunnel is ready */
   CloudflareTunnel(MobileAppLinks links)
   {
     this.links = links;
   }
 
+  /**
+   * Starts cloudflared against the server's port when the server is ready. If cloudflared
+   * is not found, installation instructions are logged and the server keeps running without a tunnel.
+   *
+   * @param event gives access to the port the server is actually listening on
+   */
   @EventListener(ApplicationReadyEvent.class)
   void start(ApplicationReadyEvent event)
   {
@@ -62,7 +69,10 @@ class CloudflareTunnel
     reader.start();
   }
 
-  // Læser hele outputtet (også efter linket), ellers blokerer cloudflared, når bufferen er fuld
+  /**
+   * Reads cloudflared's output on a background thread and prints the link the first time it appears.
+   * Reads all of the output (also after the link), otherwise cloudflared blocks when the buffer is full.
+   */
   private void readOutput()
   {
     boolean found = false;
@@ -82,7 +92,7 @@ class CloudflareTunnel
     }
     catch (IOException e)
     {
-      // Strømmen lukkes, når processen stoppes
+      // The stream is closed when the process is stopped
     }
     if (!found)
     {
@@ -90,6 +100,7 @@ class CloudflareTunnel
     }
   }
 
+  /** Stops cloudflared when the server shuts down. */
   @PreDestroy
   void stop()
   {

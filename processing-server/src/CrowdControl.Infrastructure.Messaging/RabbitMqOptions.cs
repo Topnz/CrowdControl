@@ -1,6 +1,6 @@
 namespace CrowdControl.Infrastructure.Messaging;
 
-/// <summary>Sektionen "RabbitMq" i appsettings.json.</summary>
+/// <summary>The "RabbitMq" section in appsettings.json.</summary>
 public class RabbitMqOptions
 {
     public string Host { get; set; } = "localhost";
@@ -8,6 +8,6 @@ public class RabbitMqOptions
     public string Username { get; set; } = "guest";
     public string Password { get; set; } = "guest";
 
-    /// <summary>Skal matche crowdcontrol.rabbitmq.positions-queue i ingestion-server.</summary>
+    /// <summary>Must match crowdcontrol.rabbitmq.positions-queue in ingestion-server.</summary>
     public string PositionsQueue { get; set; } = "positions";
 }

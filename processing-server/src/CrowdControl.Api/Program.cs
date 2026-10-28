@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Static web assets (Dashboard) indlæses kun automatisk i Development
+// Static web assets (Dashboard) are only loaded automatically in Development
 if (builder.Environment.IsEnvironment("Offline"))
     builder.WebHost.UseStaticWebAssets();
 
@@ -16,9 +16,9 @@ builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
-// Dashboardet kan køre på sin egen origin (launch-profilerne i CrowdControl.Dashboard, port 5111).
-// SignalR kræver AllowCredentials og dermed eksplicitte origins. I Development/Offline tillades
-// alle origins, da LAN-tilstanden åbner dashboardet via skiftende LAN-IP'er.
+// The dashboard can run on its own origin (the launch profiles in CrowdControl.Dashboard, port 5111).
+// SignalR requires AllowCredentials and therefore explicit origins. In Development/Offline all
+// origins are allowed, since LAN mode opens the dashboard via changing LAN IPs.
 string[] dashboardOrigins = builder.Configuration.GetSection("Dashboard:Origins").Get<string[]>() ?? [];
 bool allowAnyOrigin = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Offline");
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
@@ -27,9 +27,9 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .AllowAnyMethod()
     .AllowCredentials()));
 
-// Slået fra: demo-eventet bruges ikke længere; kortet viser kun positioner fra køen
-// // Demo-event som i ingestion-serverens DemoEventSeeder: firkant omkring Danmark,
-// // delt i to zoner ved Storebælt
+// Disabled: the demo event is no longer used; the map only shows positions from the queue
+// // Demo event as in ingestion-server's DemoEventSeeder: rectangle around Denmark,
+// // split into two zones at the Great Belt
 // const double denmarkSouth = 54.5;
 // const double denmarkNorth = 57.8;
 // const double denmarkWest = 8.0;
@@ -39,7 +39,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
 // Event demoEvent = new Event
 // {
 //     Name = "Demo-event",
-//     // Starter en time før nu, så telefoner med lidt forkert ur ikke afvises
+//     // Starts an hour before now, so phones with a slightly wrong clock are not rejected
 //     StartTime = DateTime.UtcNow.AddHours(-1),
 //     EndTime = DateTime.UtcNow.AddDays(30),
 //     SendInterval = 10,
@@ -70,13 +70,13 @@ builder.Services.AddSingleton<LatestHeatmap>();
 builder.Services.AddHostedService<HeatmapBroadcaster>();
 builder.Services.AddSingleton<IReceivePositionUseCase, ReceivePositionService>();
 
-// Offline kører uden RabbitMQ (fake-messaging kommer senere)
+// Offline runs without RabbitMQ (fake messaging comes later)
 if (!builder.Environment.IsEnvironment("Offline"))
     builder.Services.AddRabbitMqMessaging(builder.Configuration);
 
 var app = builder.Build();
 
-// Opdaterer main-db til nyeste EF Core-migration ved opstart (kræver docker compose)
+// Updates main-db to the latest EF Core migration at startup (requires docker compose)
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Offline"))
 {
     using var scope = app.Services.CreateScope();
@@ -86,7 +86,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Offline"))
 if (app.Environment.IsDevelopment())
     app.UseWebAssemblyDebugging();
 
-// Serverer Blazor WASM-dashboardet (CrowdControl.Dashboard)
+// Serves the Blazor WASM dashboard (CrowdControl.Dashboard)
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 

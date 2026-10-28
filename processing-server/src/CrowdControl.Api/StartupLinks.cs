@@ -5,11 +5,11 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 
 namespace CrowdControl.Api;
 
-// Printer links til dashboardet, når Api'et er startet. Lytter Api'et på alle
-// netkort (launch-profilen "lan"), printes også et link pr. LAN-adresse.
+// Prints links to the dashboard once the Api has started. If the Api listens on all
+// network interfaces (the "lan" launch profile), a link per LAN address is printed too.
 public static class StartupLinks
 {
-    // Virtuelle netkort (Docker, WSL, Hyper-V, VPN), som andre på netværket ikke kan nå
+    // Virtual network interfaces (Docker, WSL, Hyper-V, VPN) that others on the network cannot reach
     private static readonly string[] VirtualPrefixes = { "docker", "br-", "veth", "virbr", "vEthernet", "WSL", "tun", "tap" };
 
     public static void PrintOnStarted(WebApplication app)

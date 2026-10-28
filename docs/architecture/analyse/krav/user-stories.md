@@ -3,8 +3,8 @@ ID-5 Håndtér samtykke & privatliv
 o	Beskrivelse: Mobil-appen viser en samtykke-knap. Geolocation API kaldes og positioner sendes først, når deltageren har trykket på knappen. Uden samtykke sendes ingen data.
 o	Acceptkriterier: Appen viser en samtykke-knap. Geolocation API kaldes ikke, før der er trykket på knappen. Positionsdata sendes først efter samtykke. Uden samtykke sendes ingen data.
 •	ID-15. Som Deltager, ønsker jeg at få at vide, hvilke data der indsamles og hvor længe de gemmes, før jeg giver samtykke, så mit samtykke er informeret.
-o	Beskrivelse: Samtykkesiden forklarer kort, at kun position og et anonymt session-ID sendes, hvad data bruges til, og hvor længe de gemmes. Teksten står over samtykke-knappen.
-o	Acceptkriterier: Siden forklarer, hvilke data der indsamles, og hvad de bruges til. Siden oplyser, at kun position og et anonymt session-ID sendes. Siden oplyser, hvor længe data gemmes. Teksten står over samtykke-knappen.
+o	Beskrivelse: Samtykkesiden forklarer kort, at kun position og et pseudonymt session-ID sendes, hvad data bruges til, og hvor længe de gemmes. Teksten står over samtykke-knappen.
+o	Acceptkriterier: Siden forklarer, hvilke data der indsamles, og hvad de bruges til. Siden oplyser, at kun position og et pseudonymt session-ID sendes. Siden oplyser, hvor længe data gemmes. Teksten står over samtykke-knappen.
 •	ID-18. Som Deltager, ønsker jeg at kunne stoppe delingen, så jeg kan trække mit samtykke til delingen af mine data tilbage.
 o	Beskrivelse: En stop-knap afbryder positionsdelingen med det samme og sletter session-ID'et i browseren. Der sendes ikke flere positioner, før deltageren giver samtykke igen.
 o	Acceptkriterier: Stop-knappen stopper delingen med det samme. Session-ID'et slettes i browseren. Der sendes ikke flere positioner, før deltageren giver samtykke igen.
@@ -15,7 +15,7 @@ o	Acceptkriterier: Appen kender eventets sluttid. Delingen stopper automatisk, n
 o	Beskrivelse: Appen viser en tydelig status ("Deler position" / "Deler ikke"), der opdateres, når delingen starter, stoppes eller fejler.
 o	Acceptkriterier: Appen viser status "Deler position" eller "Deler ikke". Status opdateres, når delingen starter, stopper eller fejler.
 ID-6 Del position
-•	ID-16. Som Deltager, ønsker jeg at dele min position anonymt, så jeg bidrager til arrangørens visuelle overblik over deres event, uden at jeg kan identificeres.
+•	ID-16. Som Deltager, ønsker jeg at dele min position pseudonymt, så jeg bidrager til arrangørens visuelle overblik over deres event, uden at jeg kan identificeres.
 o	Beskrivelse: Appen sender kun koordinater, tidspunkt og et tilfældigt session-ID. Der sendes og gemmes intet, der kan knyttes til en person, fx navn, IP-adresse eller device-ID.
 o	Acceptkriterier: Appen sender kun koordinater, tidspunkt og et tilfældigt session-ID. Appen sender eller gemmer ingen oplysninger, der kan knyttes til en person (fx navn, IP-adresse eller device-ID).
 •	ID-20. Som Arrangør, ønsker jeg at kunne se antal af deltagere i givne zoner, så det visuelle overblik, ikke bliver forurenet af irrelevante data.
@@ -98,11 +98,11 @@ o	Acceptkriterier: Der er en log ud-knap. Et klik afslutter den aktuelle session
 Use cases
 UC1 – Håndtér samtykke & privatliv (ID-5)
 •	Aktør: Deltager
-•	Summary: Deltageren åbner mobil-appen og kan læse, hvilke data der indsamles (position og et anonymt session-ID), og at de gemmes i 24 måneder. Positionen deles først, når deltageren aktivt giver samtykke. Appen viser hele tiden, om positionen deles. Deltageren kan stoppe delingen når som helst, og den stopper automatisk, når eventet slutter.
+•	Summary: Deltageren åbner mobil-appen og kan læse, hvilke data der indsamles (position og et pseudonymt session-ID), og at de gemmes i 24 måneder. Positionen deles først, når deltageren aktivt giver samtykke. Appen viser hele tiden, om positionen deles. Deltageren kan stoppe delingen når som helst, og den stopper automatisk, når eventet slutter.
 •	Stories: ID-14, ID-15, ID-18, ID-21, ID-22
 UC2 – Del position (ID-6)
 •	Aktør: Deltager (primær), Arrangør (sekundær)
-•	Summary: Når deltageren har givet samtykke, sender appen sin position anonymt i det interval, arrangøren har valgt for eventet. Ingestion-serveren tager kun imod positioner inden for et aktivt events område og tidsrum. Den afviser positioner fra en enhed, der sender oftere end tilladt. De godkendte positioner sendes videre til behandling.
+•	Summary: Når deltageren har givet samtykke, sender appen sin position pseudonymt i det interval, arrangøren har valgt for eventet. Ingestion-serveren tager kun imod positioner inden for et aktivt events område og tidsrum. Den afviser positioner fra en enhed, der sender oftere end tilladt. De godkendte positioner sendes videre til behandling.
 •	Stories: ID-16, ID-20, ID-28, ID-29, ID-40
 UC3 – Administrér event (ID-7)
 •	Aktør: Arrangør

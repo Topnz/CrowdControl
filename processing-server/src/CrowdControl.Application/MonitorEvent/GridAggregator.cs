@@ -15,7 +15,7 @@ public class GridAggregator
     private readonly object _lock = new object();
 
 
-    // Uden event: grid'et starter i (0, 0), så alle positioner fra køen kan placeres, og der er ingen zoner
+    // Without an event: the grid starts at (0, 0), so all positions from the queue can be placed, and there are no zones
     public GridAggregator(string eventName, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
     {
         _eventName = eventName;
@@ -26,7 +26,7 @@ public class GridAggregator
         _minLon = 0;
     }
 
-    //Lat = 0.0002 og Lon = 0.00035 laver kradrater på cirka 22 meter ifølge clankeren, ved ikke om det reelt er de rigtige tal.
+    // Lat = 0.0002 and Lon = 0.00035 make squares of roughly 22 metres according to the AI; not sure these are actually the right numbers.
     public GridAggregator(Event ev, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
     {
         _eventName = ev.Name;
@@ -42,7 +42,7 @@ public class GridAggregator
             _zones = ev.Zones;
         }
 
-        // grid bliver bygget fra laveste venstre hjørne 
+        // the grid is built from the lower-left corner 
         _minLat = double.MaxValue;
         _minLon = double.MaxValue;
         IReadOnlyList<GeoPoint> corners = ev.Perimiter.GeoPoints;
