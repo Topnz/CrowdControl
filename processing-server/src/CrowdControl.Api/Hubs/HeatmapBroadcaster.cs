@@ -25,7 +25,8 @@ public class HeatmapBroadcaster : BackgroundService
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             HeatmapSnapshotDto snapshotDto = _aggregator.GetSnapshot();
-            _aggregator.Reset();
+            // Slået fra: cellerne lægges sammen over tid i stedet for at nulstilles hvert 3. sekund
+            // _aggregator.Reset();
             _latest.Snapshot = snapshotDto;
 
             await _hub.Clients.All.SendAsync("HeatmapUpdated", snapshotDto, stoppingToken);

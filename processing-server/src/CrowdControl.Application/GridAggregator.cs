@@ -17,6 +17,17 @@ public class GridAggregator
     private readonly object _lock = new object();
 
 
+    // Uden event: grid'et starter i (0, 0), så alle positioner fra køen kan placeres, og der er ingen zoner
+    public GridAggregator(string eventName, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
+    {
+        _eventName = eventName;
+        _cellSizeLat = cellSizeLat;
+        _cellSizeLon = cellSizeLon;
+        _zones = new List<Zone>();
+        _minLat = 0;
+        _minLon = 0;
+    }
+
     //Lat = 0.0002 og Lon = 0.00035 laver kradrater på cirka 22 meter ifølge clankeren, ved ikke om det reelt er de rigtige tal.
     public GridAggregator(Event ev, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
     {
