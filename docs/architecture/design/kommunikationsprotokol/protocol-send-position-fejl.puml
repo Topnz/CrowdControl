@@ -1,5 +1,5 @@
 @startuml protocol-send-position-fejl
-!include astah-style.iuml
+!include ../../styles/astah-style.iuml
 title Send position_Fejl
 
 participant "Mobil-app" as App

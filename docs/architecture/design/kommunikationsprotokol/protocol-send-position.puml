@@ -1,5 +1,5 @@
 @startuml protocol-send-position
-!include astah-style.iuml
+!include ../../styles/astah-style.iuml
 title Send position
 
 participant "Mobil-app" as App

@@ -1,5 +1,5 @@
 @startuml protocol-overview
-!include astah-style.iuml
+!include ../../styles/astah-style.iuml
 title Kommunikationsprotokol
 
 participant "Mobil-app" as App

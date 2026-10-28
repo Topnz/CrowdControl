@@ -1,5 +1,5 @@
 @startuml protocol-event-changes
-!include astah-style.iuml
+!include ../../styles/astah-style.iuml
 title Event-ændringer (planlagt)
 
 participant "Ingestion-server" as Ing
