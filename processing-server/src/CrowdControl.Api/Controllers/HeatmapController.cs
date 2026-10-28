@@ -1,5 +1,5 @@
+using CrowdControl.Api.Contracts;
 using CrowdControl.Api.Hubs;
-using CrowdControl.Shared;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CrowdControl.Api.Controllers;

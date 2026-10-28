@@ -1,5 +1,5 @@
-using CrowdControl.Application;
-using CrowdControl.Shared;
+using CrowdControl.Api.Contracts;
+using CrowdControl.Application.MonitorEvent;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CrowdControl.Api.Hubs;
@@ -24,7 +24,7 @@ public class HeatmapBroadcaster : BackgroundService
             //har sat den til 3 sekunder, fordi det er jeg talte da jeg prøvede P og T's cloudflare link
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
-            HeatmapSnapshotDto snapshotDto = _aggregator.GetSnapshot();
+            HeatmapSnapshotDto snapshotDto = _aggregator.GetSnapshot().ToDto();
             // Slået fra: cellerne lægges sammen over tid i stedet for at nulstilles hvert 3. sekund
             // _aggregator.Reset();
             _latest.Snapshot = snapshotDto;

@@ -1,6 +1,7 @@
 using CrowdControl.Api;
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
+using CrowdControl.Application.MonitorEvent;
 using CrowdControl.Infrastructure.Messaging;
 using CrowdControl.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

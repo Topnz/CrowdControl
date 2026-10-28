@@ -183,7 +183,7 @@ CrowdControl/
     │   ├── CrowdControl.Application/                # use cases + interfaces
     │   ├── CrowdControl.Infrastructure.Persistence/ # EF Core + migrationer (main-db)
     │   ├── CrowdControl.Infrastructure.Messaging/   # RabbitMQ consumer/publisher
-    │   ├── CrowdControl.Shared/                     # DTO'er delt af Api og Dashboard
+    │   ├── CrowdControl.Shared/                     # DTOs used only by the Dashboard (removed in §9.1 step 6)
     │   ├── CrowdControl.Dashboard/                  # Blazor WASM
     │   └── CrowdControl.Api/                        # host: REST, SignalR-hub,
     │                                                # Program.cs, serverer Dashboard
@@ -431,9 +431,10 @@ dotnet add src/CrowdControl.Api reference \
   src/CrowdControl.Application \
   src/CrowdControl.Infrastructure.Persistence \
   src/CrowdControl.Infrastructure.Messaging \
-  src/CrowdControl.Shared \
   src/CrowdControl.Dashboard
 ```
+
+The Api has its own DTOs in `Api/Contracts/` (matching `contracts/`) and no longer references `Shared`.
 
 For at `Api` kan servere dashboardet:
 
@@ -524,6 +525,7 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**
+- [ ] **Open question: where does grid aggregation belong?** §3 says `CrowdControl.Domain` holds grid aggregation, but `GridAggregator` lives in `Application/MonitorEvent/`. Decide whether the aggregation rule moves to `Domain` (e.g. when history, ID-10, makes stored grid cells a domain concept) or whether §3 should be corrected.
 - [ ] **HeatmapSnapshot v2 (later, once events and zones exist in the Api):** add `eventId` to the snapshot and `zoneId` to each `ZoneCount` in `contracts/schemas/signalr/HeatmapSnapshot.v2.json`, so the dashboard can tell events and zones apart by ID instead of by name. v1 deliberately describes the snapshot as the Api sends it today (no IDs), so the dashboard move stays a pure move.
 
 ### 9.1 TODO: Flyt dashboardet ud af processing-server
@@ -569,11 +571,11 @@ Afhængighedsreglen: `Core ← Adapters ← Dashboard`, håndhævet med project 
 
 | Projekt | Fjern | Behold / tilføj |
 |---|---|---|
-| `processing-server/…/CrowdControl.Api.csproj` | `ProjectReference` til `CrowdControl.Dashboard` og `CrowdControl.Shared`; `PackageReference` `Microsoft.AspNetCore.Components.WebAssembly.Server` (bruges kun til at servere WASM) | Behold `Microsoft.EntityFrameworkCore.Design` (dotnet-ef). Tilføj senere `Microsoft.AspNetCore.Authentication.JwtBearer` (ID-30). CORS og SignalR-server er en del af `Microsoft.NET.Sdk.Web`, så de kræver ingen pakke. |
-| `processing-server/…/CrowdControl.Application.csproj` | `ProjectReference` til `CrowdControl.Shared` | Kun `Domain` (afhængighedsreglen). |
+| `processing-server/…/CrowdControl.Api.csproj` | `ProjectReference` til `CrowdControl.Dashboard` (the one to `CrowdControl.Shared` was removed in step 1b); `PackageReference` `Microsoft.AspNetCore.Components.WebAssembly.Server` (bruges kun til at servere WASM) | Behold `Microsoft.EntityFrameworkCore.Design` (dotnet-ef). Tilføj senere `Microsoft.AspNetCore.Authentication.JwtBearer` (ID-30). CORS og SignalR-server er en del af `Microsoft.NET.Sdk.Web`, så de kræver ingen pakke. |
+| `processing-server/…/CrowdControl.Application.csproj` | ~~`ProjectReference` til `CrowdControl.Shared`~~ (done in step 1b) | Kun `Domain` (afhængighedsreglen). |
 | `processing-server/…/CrowdControl.Shared` | Hele projektet, også fra `CrowdControl.Processing.sln` | – |
 | `processing-server/…/CrowdControl.Dashboard` | Hele projektet fra processing-server (flyttes) | – |
-| `processing-server/tests/CrowdControl.Application.Tests` | `using CrowdControl.Shared;` i `GridAggregatorTests.cs` | Refererer kun `Application`. |
+| `processing-server/tests/CrowdControl.Application.Tests` | ~~`using CrowdControl.Shared;` i `GridAggregatorTests.cs`~~ (done in step 1b) | Refererer kun `Application`. |
 | `processing-server/tests/CrowdControl.Api.IntegrationTests` | – (refererer `Api`, som ikke længere trækker Dashboard/Shared med transitivt) | Tjek at den stadig bygger uden de transitive referencer. |
 | `dashboard/…/CrowdControl.Dashboard` (WASM) | `Blazor.Bootstrap` 4.0.0. Den bruges ikke i nogen `.razor`-fil; styling sker med den lokale `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css`. Fjern den, hvis den stadig er ubrugt, ellers flyt den med. `ProjectReference` til `Shared`. | `Microsoft.AspNetCore.Components.WebAssembly`, `…WebAssembly.DevServer` (PrivateAssets=all). `ProjectReference` til `Dashboard.Adapters` og `Dashboard.Core`. `Microsoft.AspNetCore.SignalR.Client` flyttes **ikke** hertil, kun til Adapters. |
 | `dashboard/…/CrowdControl.Dashboard.Core` | – | **Ingen pakker** (ingen Blazor, SignalR eller Http-klientbiblioteker). Ren `Microsoft.NET.Sdk` classlib. |
@@ -591,7 +593,7 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 **Trin:**
 
 - [x] 1. Kontrakter: schemas for heatmap-snapshot (SignalR) og `/history` i `contracts/` (jf. ovenfor). *Heatmap snapshot and `GET /heatmap` are done; `/history` is left as a TODO in `processing-api.yaml` and belongs to ID-10 (Se historik), not to the move.*
-- [ ] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR. *Also make capacity nullable (`Zone.Capacity` and the DTO become `int?`): the contract sends `null` for "no capacity", while the code still sends `0`.*
+- [x] 1b. Afkobl `Application` fra `Shared` (`GridAggregator` returnerer egne modeltyper, Api mapper til DTO'er), og kør `dotnet build` + `dotnet test`, **før** dashboardet flyttes. Det kan laves og merges som sit eget lille PR. *Also make capacity nullable (`Zone.Capacity` and the DTO become `int?`): the contract sends `null` for "no capacity", while the code still sends `0`.* **Done:** `HeatmapSnapshot`, `GridCell`, `ZoneCount` and `GridAggregator` live in `Application/MonitorEvent/` (one folder per use case, here UC5 Monitor event). The Api maps them with `ToDto()` in `Api/Contracts/`. `HeatmapSnapshotContractTests` validates the serialized DTO against `HeatmapSnapshot.v1.json`, so CI fails if the DTOs and the contract drift apart. `Shared.ZoneCountDto.Capacity` is also `int?` so the dashboard can still read the snapshot until `Shared` is removed.
 - [ ] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1).
 - [ ] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`.
 - [ ] 4. `Services/MapServise.cs` (stavefejl, klassen hedder `MapService`) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.

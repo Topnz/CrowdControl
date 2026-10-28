@@ -1,6 +1,4 @@
-﻿using CrowdControl.Shared;
-
-namespace CrowdControl.Application;
+﻿namespace CrowdControl.Application.MonitorEvent;
 
 public class GridAggregator
 {
@@ -12,8 +10,8 @@ public class GridAggregator
     private readonly double _cellSizeLat;
     private readonly double _cellSizeLon;
 
-    private readonly List<CellDto> _cells = new List<CellDto>();
-    private readonly List<ZoneCountDto> _zoneCounts = new List<ZoneCountDto>();
+    private readonly List<GridCell> _cells = new List<GridCell>();
+    private readonly List<ZoneCount> _zoneCounts = new List<ZoneCount>();
     private readonly object _lock = new object();
 
 
@@ -62,7 +60,7 @@ public class GridAggregator
 
         for (int i = 0; i < _zones.Count; i++)
         {
-            ZoneCountDto zoneCount = new ZoneCountDto();
+            ZoneCount zoneCount = new ZoneCount();
             zoneCount.Name = _zones[i].Name;
             zoneCount.Capacity = _zones[i].Capacity;
             zoneCount.Count = 0;
@@ -92,7 +90,7 @@ public class GridAggregator
 
             if (cellFound == false)
             {
-                CellDto newCell = new CellDto();
+                GridCell newCell = new GridCell();
                 newCell.X = x;
                 newCell.Y = y;
                 newCell.Count = 1;
@@ -113,38 +111,38 @@ public class GridAggregator
         }
     }
 
-    public HeatmapSnapshotDto GetSnapshot()
+    public HeatmapSnapshot GetSnapshot()
     {
-        HeatmapSnapshotDto snapshotDto = new HeatmapSnapshotDto();
-        snapshotDto.EventName = _eventName;
-        snapshotDto.Timestamp = DateTime.UtcNow;
-        snapshotDto.MinLat = _minLat;
-        snapshotDto.MinLon = _minLon;
-        snapshotDto.CellSizeLat = _cellSizeLat;
-        snapshotDto.CellSizeLon = _cellSizeLon;
+        HeatmapSnapshot snapshot = new HeatmapSnapshot();
+        snapshot.EventName = _eventName;
+        snapshot.Timestamp = DateTime.UtcNow;
+        snapshot.MinLat = _minLat;
+        snapshot.MinLon = _minLon;
+        snapshot.CellSizeLat = _cellSizeLat;
+        snapshot.CellSizeLon = _cellSizeLon;
 
         lock (_lock)
         {
             for (int i = 0; i < _cells.Count; i++)
             {
-                CellDto copy = new CellDto();
+                GridCell copy = new GridCell();
                 copy.X = _cells[i].X;
                 copy.Y = _cells[i].Y;
                 copy.Count = _cells[i].Count;
-                snapshotDto.Cells.Add(copy);
+                snapshot.Cells.Add(copy);
             }
 
             for (int i = 0; i < _zoneCounts.Count; i++)
             {
-                ZoneCountDto copy = new ZoneCountDto();
+                ZoneCount copy = new ZoneCount();
                 copy.Name = _zoneCounts[i].Name;
                 copy.Capacity = _zoneCounts[i].Capacity;
                 copy.Count = _zoneCounts[i].Count;
-                snapshotDto.Zones.Add(copy);
+                snapshot.Zones.Add(copy);
             }
         }
 
-        return snapshotDto;
+        return snapshot;
     }
 
     public void Reset()

@@ -4,7 +4,6 @@
     <ProjectReference Include="..\CrowdControl.Application\CrowdControl.Application.csproj" />
     <ProjectReference Include="..\CrowdControl.Infrastructure.Persistence\CrowdControl.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\CrowdControl.Infrastructure.Messaging\CrowdControl.Infrastructure.Messaging.csproj" />
-    <ProjectReference Include="..\CrowdControl.Shared\CrowdControl.Shared.csproj" />
     <ProjectReference Include="..\CrowdControl.Dashboard\CrowdControl.Dashboard.csproj" />
   </ItemGroup>
 

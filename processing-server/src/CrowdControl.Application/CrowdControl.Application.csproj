@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CrowdControl.Domain\CrowdControl.Domain.csproj" />
-    <ProjectReference Include="..\CrowdControl.Shared\CrowdControl.Shared.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
