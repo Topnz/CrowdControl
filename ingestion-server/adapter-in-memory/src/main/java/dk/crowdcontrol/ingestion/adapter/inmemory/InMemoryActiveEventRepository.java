@@ -10,9 +10,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Holder aktive events i hukommelsen. Bruges i alle profiler, indtil
- * adapter-persistence-postgis har en implementering; så skal denne have @Profile("offline").
- * ConcurrentHashMap, fordi requests håndteres i flere tråde samtidig.
+ * Keeps active events in memory. Used in all profiles until
+ * adapter-persistence-postgis has an implementation; then this one should get @Profile("offline").
+ * ConcurrentHashMap, because requests are handled on several threads at once.
  */
 @Component
 public class InMemoryActiveEventRepository implements ActiveEventRepository

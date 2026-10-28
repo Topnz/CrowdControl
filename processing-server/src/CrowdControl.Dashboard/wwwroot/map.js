@@ -27,7 +27,7 @@ window.addMapPoint = function (latitude, longitude) {
         .bindPopup();
 };
 
-// Tegner et HeatmapSnapshotDto: én prik pr. grid-celle i midten af cellen, farvet efter antal
+// Draws a HeatmapSnapshotDto: one dot per grid cell in the middle of the cell, coloured by count
 window.renderHeatmap = function (snapshot) {
     if (!map || !heatLayer) return;
     heatLayer.clearLayers();
@@ -37,7 +37,7 @@ window.renderHeatmap = function (snapshot) {
         const lat = snapshot.minLat + (cell.y + 0.5) * snapshot.cellSizeLat;
         const lon = snapshot.minLon + (cell.x + 0.5) * snapshot.cellSizeLon;
         const t = cell.count / max;
-        // grøn (lav) → rød (høj)
+        // green (low) → red (high)
         const color = `hsl(${Math.round(120 * (1 - t))}, 90%, 45%)`;
         L.circleMarker([lat, lon], {
             radius: 4 + 6 * t,

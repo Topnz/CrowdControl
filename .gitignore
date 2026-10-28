@@ -9,12 +9,12 @@
 *.user
 *.DotSettings.user
 
-# Build-output
+# Build output
 target/
 bin/
 obj/
 TestResults/
 node_modules/
 
-# Hemmeligheder
+# Secrets
 .env

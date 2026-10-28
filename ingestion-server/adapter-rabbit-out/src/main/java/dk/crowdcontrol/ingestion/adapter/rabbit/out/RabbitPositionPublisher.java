@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
- * Sender godkendte positioner som JSON til positions-køen, hvor processing-server henter dem.
- * Modstykket til LoggingPositionPublisher, som bruges med profilen "offline".
+ * Sends accepted positions as JSON to the positions queue, where processing-server picks them up.
+ * The counterpart of LoggingPositionPublisher, which is used with the "offline" profile.
  */
 @Component
 @Profile("!offline")
@@ -19,6 +19,10 @@ public class RabbitPositionPublisher implements PositionPublisher
   private final AmqpTemplate amqpTemplate;
   private final String queueName;
 
+  /**
+   * @param amqpTemplate sends messages to RabbitMQ; created by Spring Boot
+   * @param queueName    the name of the positions queue (crowdcontrol.rabbitmq.positions-queue)
+   */
   public RabbitPositionPublisher(AmqpTemplate amqpTemplate,
       @Value("${crowdcontrol.rabbitmq.positions-queue}") String queueName)
   {
@@ -28,7 +32,7 @@ public class RabbitPositionPublisher implements PositionPublisher
 
   @Override public void publish(FilteredPosition filteredPosition)
   {
-    // Kun routing key = default exchange, som lægger beskeden i køen med samme navn
+    // Only a routing key = default exchange, which puts the message in the queue with the same name
     amqpTemplate.convertAndSend(queueName, PosData.from(filteredPosition));
   }
 }
