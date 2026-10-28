@@ -21,6 +21,7 @@ class LocalLinkPrinter
   void printLink(ApplicationReadyEvent event)
   {
     String port = event.getApplicationContext().getEnvironment().getProperty("local.server.port");
+    if (port == null) return; // ingen webserver, fx i @SpringBootTest
     links.print("Mobil-app (denne maskine)", "http://localhost:" + port);
   }
 }
