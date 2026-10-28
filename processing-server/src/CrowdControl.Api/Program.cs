@@ -15,6 +15,17 @@ builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
+// Dashboardet kan køre på sin egen origin (launch-profilerne i CrowdControl.Dashboard, port 5111).
+// SignalR kræver AllowCredentials og dermed eksplicitte origins. I Development/Offline tillades
+// alle origins, da LAN-tilstanden åbner dashboardet via skiftende LAN-IP'er.
+string[] dashboardOrigins = builder.Configuration.GetSection("Dashboard:Origins").Get<string[]>() ?? [];
+bool allowAnyOrigin = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Offline");
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
+    .SetIsOriginAllowed(origin => allowAnyOrigin || dashboardOrigins.Contains(origin))
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials()));
+
 // Slået fra: demo-eventet bruges ikke længere; kortet viser kun positioner fra køen
 // // Demo-event som i ingestion-serverens DemoEventSeeder: firkant omkring Danmark,
 // // delt i to zoner ved Storebælt
@@ -77,6 +88,8 @@ if (app.Environment.IsDevelopment())
 // Serverer Blazor WASM-dashboardet (CrowdControl.Dashboard)
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
+
+app.UseCors();
 
 app.MapControllers();
 app.MapHub<HeatmapHub>("/hubs/heatmap");
