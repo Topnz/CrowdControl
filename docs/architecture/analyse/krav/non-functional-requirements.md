@@ -1,6 +1,6 @@
 # Ikke-funktionelle krav – CrowdControl (FURPS+)
 
-Kravene er afledt af arkitekturen (C2, `CLAUDE.md`) og user stories i `docs/user-stories.md` / Jira. Tal markeret med **(forslag)** er ikke aftalt endnu og bør bekræftes af holdet, før de bruges som acceptkriterier.
+Kravene er afledt af arkitekturen (C2, `CLAUDE.md`) og user stories i `docs/architecture/analyse/krav/user-stories.md` / Jira. Tal markeret med **(forslag)** er ikke aftalt endnu og bør bekræftes af holdet, før de bruges som acceptkriterier.
 
 **FURPS+**
 

@@ -1,0 +1,25 @@
+@startuml protocol-send-position
+!include astah-style.iuml
+title Send position
+
+participant "Mobil-app" as App
+participant "Ingestion-server" as Ing
+participant "RabbitMQ" as MQ
+
+App -> Ing : 1: HTTP GET /?event={eventId}
+Ing --> App : 2: HTTP 200 index.html, app.js, styles.css
+
+group Planlagt (ID-21, ID-29)
+    App -> Ing : 3: HTTP GET /events/{eventId}
+    Ing --> App : 4: HTTP 200 JSON EventInfo(eventId, name, startTime, endTime, sendIntervalSeconds)
+end
+
+loop hvert sendeinterval (i dag fast 5 s)
+    App -> Ing : 5: HTTP POST /positions JSON PositionRequest(sessionId, eventId,\nlatitude, longitude, accuracy, timestamp)
+    Ing ->> MQ : 5.1: AMQP basic.publish("", "positions") JSON PositionReceived(sessionId,\neventId, zoneIds, latitude, longitude, accuracy, timestamp)
+    Ing --> App : 6: HTTP 202 Accepted
+end
+
+note right of Ing : Content-Type: application/json\nTidspunkter er ISO 8601 i UTC
+
+@enduml

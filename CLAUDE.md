@@ -52,7 +52,7 @@ CrowdControl viser et live heatmap over, hvor deltagere befinder sig til et even
 - **Arrangør** – står for at afholde et event og vil have visuelle oversigter over, hvor deltagerne befinder sig på bestemte tidspunkter.
 - **Deltager** – deltager i et event og ønsker den bedst mulige oplevelse ved eventet.
 
-**Epics** (Jira-projekt `ID`; stories, acceptkriterier og use case-resuméer i `docs/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
+**Epics** (Jira-projekt `ID`; stories, acceptkriterier og use case-resuméer i `docs/architecture/analyse/krav/user-stories.md`. I user stories hedder Event Holder "Arrangør" og Event-Participant "Deltager")
 
 | Epic | Stories | Indhold |
 |---|---|---|
@@ -84,7 +84,7 @@ Konsekvenser for arkitekturen:
 
 ### 1.2 Use cases
 
-Én use case pr. epic (UC1–UC7, resuméer og stories i `docs/user-stories.md`):
+Én use case pr. epic (UC1–UC7, resuméer og stories i `docs/architecture/analyse/krav/user-stories.md`):
 
 - **Deltager:** UC1 Håndtér samtykke & privatliv, UC2 Del position (primær).
 - **Arrangør:** UC2 Del position (sekundær), UC3 Administrér event, UC4 Administrér zone, UC5 Overvåg event, UC6 Se historik (primær), UC7 Log ind & administrér konto.
@@ -137,7 +137,14 @@ CrowdControl/
 ├── docker-compose.yml               # RabbitMQ + main-db + event-db (PostGIS)
 ├── .gitignore  .editorconfig
 ├── docs/architecture/
-│   └── c2.png
+│   ├── analyse/
+│   │   ├── krav/                    # user-stories.md, non-functional-requirements.md
+│   │   └── ssd/                     # systemsekvensdiagrammer
+│   └── design/
+│       ├── c2/                      # c2.drawio + c2.png
+│       ├── klassediagram/
+│       ├── sekvensdiagrammer/
+│       └── kommunikationsprotokol/  # HTTP- og AMQP-protokoller (PlantUML)
 │
 ├── contracts/                       # Det ENESTE der deles på tværs af containere
 │   ├── openapi/
@@ -515,8 +522,8 @@ Ved CI: brug path-filtre, så ændringer i `processing-server/**` kun bygger C#-
 **Næste skridt**
 
 - [ ] Aftal felterne i `contracts/` (schemas og request/response-typer), inkl. sendeinterval og sluttid til mobil-appen.
-- [ ] Gør acceptkriterierne i `docs/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
-- [ ] Eksportér `docs/architecture/c2.png` igen fra den opdaterede `c2.drawio`.
+- [ ] Gør acceptkriterierne i `docs/architecture/analyse/krav/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
+- [ ] Eksportér `docs/architecture/design/c2/c2.png` igen fra den opdaterede `c2.drawio`.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
 - [ ] Reload Maven i IntelliJ og åbn `CrowdControl.Processing.sln` i Rider.
 - [ ] **Flyt dashboardet til egen mappe/solution (`dashboard/`), se afsnit 9.1.**

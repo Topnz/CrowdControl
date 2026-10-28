@@ -15,6 +15,7 @@ bin/
 obj/
 TestResults/
 node_modules/
+*.bkp
 
 # Secrets
 .env
