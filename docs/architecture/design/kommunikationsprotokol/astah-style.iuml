@@ -1,0 +1,27 @@
+' Shared style for the protocol diagrams, matching Astah's defaults:
+' yellow lifelines, pink notes, black lines, no shadows and no footbox.
+' Use with: !include astah-style.iuml
+
+skinparam style strictuml
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+hide footbox
+
+skinparam sequence {
+  ParticipantBackgroundColor #FFFFCC
+  ParticipantBorderColor #000000
+  ActorBackgroundColor #FFFFCC
+  ActorBorderColor #000000
+  LifeLineBorderColor #000000
+  LifeLineBackgroundColor #FFFFCC
+  ArrowColor #000000
+  GroupBorderColor #000000
+  GroupBackgroundColor #FFFFFF
+  BoxBorderColor #000000
+}
+
+skinparam note {
+  BackgroundColor #FFCCCC
+  BorderColor #000000
+}
