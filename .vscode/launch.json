@@ -70,21 +70,21 @@
       "name": "Dashboard – offline",
       "type": "node-terminal",
       "request": "launch",
-      "cwd": "${workspaceFolder}/processing-server",
+      "cwd": "${workspaceFolder}/dashboard",
       "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile offline"
     },
     {
       "name": "Dashboard – lokal",
       "type": "node-terminal",
       "request": "launch",
-      "cwd": "${workspaceFolder}/processing-server",
+      "cwd": "${workspaceFolder}/dashboard",
       "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lokal"
     },
     {
       "name": "Dashboard – LAN",
       "type": "node-terminal",
       "request": "launch",
-      "cwd": "${workspaceFolder}/processing-server",
+      "cwd": "${workspaceFolder}/dashboard",
       "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lan"
     },
     {
@@ -138,26 +138,6 @@
       "presentation": {
         "hidden": true
       }
-    },
-    {
-      "name": "Dashboard – lokal (uden build)",
-      "type": "node-terminal",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/processing-server",
-      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lokal --no-build",
-      "presentation": {
-        "hidden": true
-      }
-    },
-    {
-      "name": "Dashboard – LAN (uden build)",
-      "type": "node-terminal",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/processing-server",
-      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lan --no-build",
-      "presentation": {
-        "hidden": true
-      }
     }
   ],
   "compounds": [
@@ -168,7 +148,7 @@
       "configurations": [
         "Ingestion – lokal (uden docker)",
         "Api – lokal (uden docker og build)",
-        "Dashboard – lokal (uden build)"
+        "Dashboard – lokal"
       ]
     },
     {
@@ -178,7 +158,7 @@
       "configurations": [
         "Ingestion – LAN (uden docker)",
         "Api – LAN (uden docker og build)",
-        "Dashboard – LAN (uden build)"
+        "Dashboard – LAN"
       ]
     }
   ]

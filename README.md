@@ -22,14 +22,13 @@ Mobil-appen bruger Geolocation API, som browsere kun tillader på `https://` ell
 |---|---|---|---|
 | `Infrastructure (docker compose)` | ✓ | ✓ | task `docker compose up` |
 | `Ingestion – offline` / `lokal` / `LAN` | ✓ | – | ✓ |
-| `Api – offline` / `lokal` / `LAN` (serverer også dashboardet på port 5262) | – | ✓ | ✓ |
-| `Dashboard – offline` / `lokal` / `LAN` (dashboardet alene på port 5111, kræver at Api'et kører) | – | ✓ | ✓ |
-| `Api + Dashboard – offline` / `lokal` / `LAN` | – | ✓ | – |
+| `Api – offline` / `lokal` / `LAN` (REST + SignalR on port 5262, no UI) | – | ✓ (`processing-server/`) | ✓ |
+| `Dashboard – offline` / `lokal` / `LAN` (the dashboard on port 5111, needs the Api running) | – | ✓ (`dashboard/`) | ✓ |
 | `Alt – lokal` / `Alt – LAN` (ingestion + Api + dashboard sammen) | – | – | ✓ |
 
-IntelliJ kan ikke køre .NET, og Rider kan ikke køre Maven. Kør derfor ingestion fra IntelliJ og Api'et/dashboardet fra Rider, eller det hele fra VS Code.
+IntelliJ cannot run .NET and Rider cannot run Maven. Run ingestion from IntelliJ and the Api and dashboard from Rider, or everything from VS Code.
 
-`Dashboard – …` kører dashboardet på sin egen dev-server (port 5111), som forberedelse til at det flyttes ud af processing-server. Det kalder Api'et på samme værtsnavn, port 5262 (`ApiBaseUrl` i `wwwroot/appsettings.json`), så Api'et skal køre i samme tilstand. Indtil flytningen serverer Api'et stadig også dashboardet på port 5262.
+The Api and the dashboard are two separate solutions. In Rider, open `processing-server/CrowdControl.Processing.sln` and `dashboard/CrowdControl.Dashboard.sln` in two windows and start `Api – …` in one and `Dashboard – …` in the other, in the same mode. The dashboard calls the Api on the same host name, port 5262 (`ApiBaseUrl` in `dashboard/src/CrowdControl.Dashboard/wwwroot/appsettings.json`). The Api no longer serves the dashboard.
 
 ### Links
 
@@ -38,11 +37,12 @@ Hver applikation printer sine links i konsollen, når den er startet:
 ```
 Mobil-app (denne maskine): http://localhost:8080/?event=00000000-0000-0000-0000-000000000001
 Mobil-app (offentligt link via Cloudflare-tunnel): https://<tilfældig>.trycloudflare.com/?event=...   (kun LAN)
-Dashboard (denne maskine): http://localhost:5262
-Dashboard (LAN):           http://192.168.x.x:5262                                                   (kun LAN)
+API (this machine): http://localhost:5262
+API (LAN):          http://192.168.x.x:5262                                                         (kun LAN)
+Now listening on: http://localhost:5111                                                              (dashboard)
 ```
 
-`Dashboard – …` printer kun `Now listening on: http://localhost:5111`. I LAN-tilstand står der `0.0.0.0`. Brug i stedet den LAN-IP, Api'et printer, med port 5111.
+Open the dashboard at http://localhost:5111. In LAN mode the dashboard's dev server only prints `0.0.0.0`, so use the LAN IP the Api prints with port 5111 instead (e.g. `http://192.168.x.x:5111`).
 
 RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `crowdcontrol`).
 
@@ -62,4 +62,6 @@ RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `
 
 - **Port 8080, 5262 eller 5111 er optaget:** en anden instans kører allerede, fx fra en anden IDE eller terminal. Stop den først.
 - **Ingen prikker på dashboardet:** ingestion kører i `offline`, så positionerne kun bliver logget. Brug `lokal` eller `LAN`.
+- **The dashboard loads but the map never updates:** the Api is not running, or runs in another mode than the dashboard. Start `Api – …` in the same mode.
+- **http://localhost:5262 shows 404:** expected. The Api only serves REST and SignalR; the dashboard is on port 5111.
 - **Tunnelen lever videre efter stop:** hvis ingestion blev dræbt hårdt, kan `cloudflared` køre videre. Stop processen `cloudflared` manuelt.

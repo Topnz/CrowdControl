@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Api + Dashboard – LAN" type="CompoundRunConfigurationType">
-    <toRun name="Api – LAN" type="LaunchSettings" />
-    <toRun name="Dashboard – LAN" type="LaunchSettings" />
-    <method v="2" />
-  </configuration>
-</component>

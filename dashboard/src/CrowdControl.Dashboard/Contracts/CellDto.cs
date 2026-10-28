@@ -1,4 +1,4 @@
-﻿namespace CrowdControl.Shared;
+namespace CrowdControl.Dashboard.Contracts;
 
 public class CellDto
 {
