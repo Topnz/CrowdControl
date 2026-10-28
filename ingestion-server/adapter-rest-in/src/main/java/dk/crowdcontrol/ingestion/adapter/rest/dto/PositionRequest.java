@@ -12,9 +12,16 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * JSON-body i POST /positions fra mobil-appen.
- * Se PositionRequest i contracts/openapi/ingestion-api.yaml.
- * Tal er Double (ikke double), så et manglende felt bliver null og fanges af @NotNull.
+ * JSON body of POST /positions from the mobile app.
+ * See PositionRequest in contracts/openapi/ingestion-api.yaml.
+ * Numbers are Double (not double), so a missing field becomes null and is caught by @NotNull.
+ *
+ * @param sessionId the device's pseudonymous session ID
+ * @param eventId   the event the mobile app is sending to (from ?event= in the link)
+ * @param latitude  latitude between -90 and 90
+ * @param longitude longitude between -180 and 180
+ * @param accuracy  accuracy in metres; must not be negative
+ * @param timestamp when the position was measured, as ISO 8601 text
  */
 public record PositionRequest(
     @NotNull UUID sessionId,
@@ -24,7 +31,11 @@ public record PositionRequest(
     @NotNull @PositiveOrZero Double accuracy,
     @NotNull Instant timestamp)
 {
-  /** eventId er ikke en del af Position, så den sendes separat til use casen. */
+  /**
+   * eventId is not part of Position, so it is passed separately to the use case.
+   *
+   * @return the position as a domain object
+   */
   public Position toDomain()
   {
     return new Position(new SessionId(sessionId), new GeoPoint(latitude, longitude), accuracy, timestamp);

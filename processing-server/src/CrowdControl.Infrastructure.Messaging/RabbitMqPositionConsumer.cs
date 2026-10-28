@@ -11,9 +11,9 @@ using RabbitMQ.Client.Exceptions;
 namespace CrowdControl.Infrastructure.Messaging;
 
 /// <summary>
-/// Lytter på positions-køen (Java -> C#, se contracts/asyncapi/messaging.yaml) og
-/// sender hver position til IReceivePositionUseCase. Beskeden ack'es først, når den er
-/// behandlet, så en position ikke går tabt, hvis serveren stopper midt i.
+/// Listens to the positions queue (Java -> C#, see contracts/asyncapi/messaging.yaml) and
+/// sends each position to IReceivePositionUseCase. The message is only acked once it has been
+/// processed, so a position is not lost if the server stops halfway.
 /// </summary>
 public class RabbitMqPositionConsumer(
     IOptions<RabbitMqOptions> options,
@@ -22,7 +22,7 @@ public class RabbitMqPositionConsumer(
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
 
-    // Hvor mange beskeder RabbitMQ må sende, før de er ack'et
+    // How many messages RabbitMQ may send before they are acked
     private const ushort PrefetchCount = 50;
 
     private readonly RabbitMqOptions _options = options.Value;
@@ -32,7 +32,7 @@ public class RabbitMqPositionConsumer(
         await using IConnection connection = await ConnectAsync(stoppingToken);
         await using IChannel channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        // Samme argumenter som Javas new Queue("positions"), ellers afviser RabbitMQ med PRECONDITION_FAILED
+        // Same arguments as Java's new Queue("positions"), otherwise RabbitMQ rejects with PRECONDITION_FAILED
         await channel.QueueDeclareAsync(_options.PositionsQueue,
             durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
         await channel.BasicQosAsync(prefetchSize: 0, PrefetchCount, global: false, stoppingToken);
@@ -43,7 +43,7 @@ public class RabbitMqPositionConsumer(
         await channel.BasicConsumeAsync(_options.PositionsQueue, autoAck: false, consumer, stoppingToken);
         logger.LogInformation("Lytter på køen {Queue} på {Host}:{Port}", _options.PositionsQueue, _options.Host, _options.Port);
 
-        // Consumeren kører i RabbitMQ-klientens tråde; her ventes bare til serveren lukker
+        // The consumer runs on the RabbitMQ client's threads; here we just wait until the server shuts down
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
@@ -61,25 +61,25 @@ public class RabbitMqPositionConsumer(
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            // Serveren lukker: beskeden er ikke ack'et, så RabbitMQ leverer den igen senere
+            // The server is shutting down: the message is not acked, so RabbitMQ delivers it again later
         }
         catch (JsonException e)
         {
-            // Beskeden følger ikke kontrakten og bliver aldrig gyldig, så den kasseres
+            // The message does not follow the contract and will never become valid, so it is discarded
             logger.LogWarning(e, "Ugyldig besked på {Queue} kasseres", _options.PositionsQueue);
             await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, stoppingToken);
         }
         catch (Exception e)
         {
-            // Ikke requeue: en position er kun interessant lige nu, og requeue kan give en uendelig løkke
+            // No requeue: a position is only interesting right now, and requeue can cause an infinite loop
             logger.LogError(e, "Position fra {Queue} kunne ikke behandles og kasseres", _options.PositionsQueue);
             await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, stoppingToken);
         }
     }
 
     /// <summary>
-    /// Prøver igen, indtil RabbitMQ svarer, så serveren kan startes før docker compose.
-    /// Mister vi forbindelsen senere, genopretter klienten den selv (AutomaticRecoveryEnabled).
+    /// Retries until RabbitMQ responds, so the server can be started before docker compose.
+    /// If the connection is lost later, the client restores it by itself (AutomaticRecoveryEnabled).
     /// </summary>
     private async Task<IConnection> ConnectAsync(CancellationToken stoppingToken)
     {

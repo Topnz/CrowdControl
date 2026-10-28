@@ -1,8 +1,8 @@
 namespace CrowdControl.Dashboard.Services;
 
-// Adressen på Api'et (REST + SignalR). Læses fra "ApiBaseUrl" i wwwroot/appsettings.json,
-// hvor {host} erstattes med det værtsnavn, dashboardet er åbnet på. Så virker samme
-// konfiguration både på localhost og fra en anden maskine på LAN'et.
+// The address of the Api (REST + SignalR). Read from "ApiBaseUrl" in wwwroot/appsettings.json,
+// where {host} is replaced with the host name the dashboard was opened on. That way the same
+// configuration works both on localhost and from another machine on the LAN.
 public record ApiAddress(Uri BaseUrl)
 {
     public static ApiAddress From(string? template, Uri dashboardAddress)

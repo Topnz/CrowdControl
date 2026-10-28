@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * En position modtaget fra mobil-appen. Indeholder kun et pseudonymt sessionId,
- * ingen oplysninger om personen.
+ * A position received from the mobile app. Contains only a pseudonymous sessionId,
+ * no information about the person.
  */
 public class Position
 {
@@ -14,6 +14,14 @@ public class Position
   private final double accuracy;
   private final Instant timestamp;
 
+  /**
+   * @param sessionId the device's pseudonymous session ID
+   * @param geoPoint  where the device is
+   * @param accuracy  accuracy in metres (ID-40); must not be negative
+   * @param timestamp when the position was measured on the device
+   * @throws IllegalArgumentException if accuracy is negative
+   * @throws NullPointerException     if sessionId, geoPoint or timestamp is null
+   */
   public Position(SessionId sessionId, GeoPoint geoPoint, double accuracy, Instant timestamp)
   {
     if (accuracy < 0)
@@ -24,22 +32,25 @@ public class Position
     this.timestamp = Objects.requireNonNull(timestamp, "timestamp");
   }
 
+  /** @return the device's pseudonymous session ID */
   public SessionId getSessionId()
   {
     return sessionId;
   }
 
+  /** @return where the device is */
   public GeoPoint getGeoPoint()
   {
     return geoPoint;
   }
 
-  /** Nøjagtighed i meter, som Geolocation API'et angiver den. */
+  /** @return accuracy in metres, as reported by the Geolocation API */
   public double getAccuracy()
   {
     return accuracy;
   }
 
+  /** @return when the position was measured on the device */
   public Instant getTimestamp()
   {
     return timestamp;

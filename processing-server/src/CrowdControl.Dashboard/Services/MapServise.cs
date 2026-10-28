@@ -25,7 +25,7 @@ public class MapService : IAsyncDisposable
         await StartHeatmapFeedAsync();
     }
 
-    // Lytter på HeatmapBroadcaster i Api (/hubs/heatmap), som sender et snapshot hvert 3. sekund
+    // Listens to HeatmapBroadcaster in Api (/hubs/heatmap), which sends a snapshot every 3 seconds
     private async Task StartHeatmapFeedAsync()
     {
         _hub = new HubConnectionBuilder()

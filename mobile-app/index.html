@@ -7,18 +7,21 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Fixed header with summary, buttons and status, so the button can always be reached -->
   <header>
     <h1>Del din position</h1>
-    <!-- ID-15: det vigtigste om data skal stå over samtykke-knappen -->
+    <!-- ID-15: the key facts about data must appear above the consent button -->
     <p class="lead">Vi sender kun din position og et pseudonymt session-ID. Det sammentalte antal personer gemmes i 24 måneder. Læs mere nedenfor.</p>
     <button id="consent">Jeg accepterer at dele min position</button>
     <button id="stop" class="stop" hidden>Stop deling</button>
     <p id="status" aria-live="polite"></p>
   </header>
 
+  <!-- The content scrolls beneath the fixed header -->
   <main>
     <article class="card">
-      <!-- DUMMY: Arrangørens navn og kontaktoplysninger er opdigtede og skal udskiftes med de rigtige -->
+      <!-- The full consent text; sharing is described as it will work once ID-18, ID-21 and ID-22 are done -->
+      <!-- DUMMY: The organiser's name and contact details are made up and must be replaced with the real ones -->
       <h2>Hvorfor</h2>
       <p><strong>Eksempel Festival ApS (dummy)</strong> vil gerne vide, hvor mange mennesker der er de forskellige steder på eventet, så de kan undgå trængsel og gøre eventet mere sikkert. Det kan du hjælpe med ved at dele din position, mens du er på eventet.</p>
 
@@ -52,6 +55,7 @@
     </article>
   </main>
 
+  <!-- Only shown if the browser has JavaScript disabled -->
   <noscript>Siden kræver JavaScript for at kunne dele din position.</noscript>
   <script src="app.js"></script>
 </body>

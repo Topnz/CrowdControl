@@ -25,6 +25,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests {@link ReceivePositionService}: that valid positions are published with event and zones,
+ * and that positions are rejected on rate limiting, unknown event or outside area and time span.
+ */
 class ReceivePositionServiceTest
 {
   private static final Instant START = Instant.parse("2026-07-01T10:00:00Z");
@@ -100,11 +104,13 @@ class ReceivePositionServiceTest
     assertTrue(publisher.published.isEmpty());
   }
 
+  /** Position with a random session ID and 5 metres accuracy. */
   private static Position positionAt(double lat, double lon, Instant time)
   {
     return new Position(new SessionId(UUID.randomUUID()), new GeoPoint(lat, lon), 5, time);
   }
 
+  /** Square with its south-west corner at (lat, lon) and sides of size degrees. */
   private static Boundary square(double lat, double lon, double size)
   {
     return new Boundary(List.of(
@@ -114,8 +120,9 @@ class ReceivePositionServiceTest
         new GeoPoint(lat + size, lon)));
   }
 
-  // Simple fakes af out-portene, så servicen kan testes uden Spring, RabbitMQ eller database
+  // Simple fakes of the out-ports, so the service can be tested without Spring, RabbitMQ or a database
 
+  /** Allows or rejects all positions depending on the allow field. */
   private static class FakeRateLimiter implements RateLimiter
   {
     boolean allow = true;
@@ -126,6 +133,7 @@ class ReceivePositionServiceTest
     }
   }
 
+  /** Events in a HashMap; counts lookups so the test can see whether a lookup happened. */
   private static class FakeActiveEventRepository implements ActiveEventRepository
   {
     private final Map<UUID, Event> events = new HashMap<>();
@@ -148,6 +156,7 @@ class ReceivePositionServiceTest
     }
   }
 
+  /** Stores published positions in a list so the test can check them. */
   private static class FakePositionPublisher implements PositionPublisher
   {
     final List<FilteredPosition> published = new ArrayList<>();

@@ -17,8 +17,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Tjekker, at beskeden bliver til den JSON, C# forventer (PositionReceived.v1.json):
- * rigtige feltnavne og tid som ISO 8601-tekst, ikke som et tal.
+ * Checks that the message becomes the JSON C# expects (PositionReceived.v1.json):
+ * correct field names and time as ISO 8601 text, not as a number.
  */
 class PosDataTest
 {

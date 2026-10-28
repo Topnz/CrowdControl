@@ -9,23 +9,32 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 /**
- * Køen til positioner (Java -> C#), se contracts/asyncapi/messaging.yaml.
- * Der sendes via RabbitMQ's default exchange, hvor routing key = kønavn,
- * så der er ikke brug for en egen exchange eller binding.
- * RabbitTemplate laves af Spring Boot og bruger automatisk converter-beanen nedenfor.
+ * The queue for positions (Java -> C#), see contracts/asyncapi/messaging.yaml.
+ * Messages are sent via RabbitMQ's default exchange, where routing key = queue name,
+ * so no separate exchange or binding is needed.
+ * RabbitTemplate is created by Spring Boot and automatically uses the converter bean below.
  */
 @Configuration
 @Profile("!offline")
 public class MessagingConfig
 {
-  /** Durable kø; oprettes i RabbitMQ ved første forbindelse, hvis den ikke findes. */
+  /**
+   * Durable queue; created in RabbitMQ on the first connection if it does not exist.
+   *
+   * @param queueName the name of the positions queue (crowdcontrol.rabbitmq.positions-queue)
+   * @return the queue
+   */
   @Bean
   public Queue positionsQueue(@Value("${crowdcontrol.rabbitmq.positions-queue}") String queueName)
   {
     return new Queue(queueName);
   }
 
-  /** Sender beskeder som JSON (application/json) i stedet for serialiserede Java-objekter. */
+  /**
+   * Sends messages as JSON (application/json) instead of serialised Java objects.
+   *
+   * @return the converter used by RabbitTemplate
+   */
   @Bean
   public MessageConverter converter()
   {

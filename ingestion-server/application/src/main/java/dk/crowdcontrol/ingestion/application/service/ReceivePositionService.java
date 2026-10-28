@@ -12,12 +12,22 @@ import dk.crowdcontrol.ingestion.domain.Position;
 
 import java.util.UUID;
 
+/**
+ * Accepts positions: rate limiting, event lookup, filtering against area
+ * and time span, and finally publishing to processing-server.
+ * Deliberately has no Spring annotations; it is wired in UseCaseConfig in bootstrap.
+ */
 public class ReceivePositionService implements ReceivePositionUseCase
 {
   private final RateLimiter rateLimiter;
   private final ActiveEventRepository activeEventRepository;
   private final PositionPublisher positionPublisher;
 
+  /**
+   * @param rateLimiter           limits how often one device may send
+   * @param activeEventRepository the active events positions are checked against
+   * @param positionPublisher     forwards accepted positions
+   */
   public ReceivePositionService(RateLimiter rateLimiter,
       ActiveEventRepository activeEventRepository,
       PositionPublisher positionPublisher)
@@ -30,20 +40,20 @@ public class ReceivePositionService implements ReceivePositionUseCase
 
   @Override public void receivePosition(Position position, UUID eventId)
   {
-    // 1. Rate limit først, så en enhed, der sender for ofte, ikke koster opslag
+    // 1. Rate limit first, so a device that sends too often does not cost a lookup
     if (!rateLimiter.allow(position.getSessionId()))
       throw new RateLimitExceededException();
 
-    // 2. Find eventet
+    // 2. Find the event
     Event event = activeEventRepository.findById(eventId)
         .orElseThrow(() -> new OutsideActiveEventException("Event " + eventId + " findes ikke"));
 
-    // 3. Filtrér mod eventets område og tidsrum, og find zonerne (reglen ligger i domænet)
+    // 3. Filter against the event's area and time span, and find the zones (the rule lives in the domain)
     FilteredPosition filteredPosition = FilteredPosition.from(event, position)
         .orElseThrow(() -> new OutsideActiveEventException(
             "Positionen ligger uden for område eller tidsrum for event " + eventId));
 
-    // 4. Send videre til processing-server
+    // 4. Forward to processing-server
     positionPublisher.publish(filteredPosition);
   }
 }

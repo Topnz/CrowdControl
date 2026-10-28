@@ -67,7 +67,7 @@ public class GridAggregatorTests
         Assert.Equal(0, zone.Count);
     }
 
-    // Event fra (0, 0) til (0.01, 0.01) med én zone i det nederste venstre hjørne
+    // Event from (0, 0) to (0.01, 0.01) with one zone in the lower-left corner
     private static Event CreateTestEvent()
     {
         return new Event

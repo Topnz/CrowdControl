@@ -8,18 +8,26 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Oversætter use casens exceptions til de HTTP-koder, ingestion-api.yaml lover.
- * Ugyldig JSON og fejlet validering (@Valid) giver allerede 400 fra Spring selv.
+ * Translates the use case's exceptions to the HTTP status codes promised by ingestion-api.yaml.
+ * Invalid JSON and failed validation (@Valid) already give 400 from Spring itself.
  */
 @RestControllerAdvice
 public class RestExceptionHandler
 {
+  /**
+   * @param e the device has sent too often
+   * @return 429 Too Many Requests with the exception's message
+   */
   @ExceptionHandler(RateLimitExceededException.class)
   public ProblemDetail handleRateLimitExceeded(RateLimitExceededException e)
   {
     return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
   }
 
+  /**
+   * @param e the event does not exist, or the position lies outside the area or time span
+   * @return 422 Unprocessable Content with the exception's message
+   */
   @ExceptionHandler(OutsideActiveEventException.class)
   public ProblemDetail handleOutsideActiveEvent(OutsideActiveEventException e)
   {

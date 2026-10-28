@@ -608,4 +608,5 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - Hver ny out-port skal have en in-memory/fake-implementering i `adapter-in-memory` (Java) eller en fake i C#, så alt kan køre lokalt uden eksterne systemer.
 - Ændringer i kommunikationen mellem containere starter i `contracts/`.
 - Java og C# deler aldrig database; migrationer ligger hos den service, der ejer databasen.
+- Kommentarer og Javadoc/XML-docs skrives på engelsk (Java, C#, JS, CSS, HTML og konfigurationsfiler). Tekst, brugerne ser (UI, statusbeskeder), forbliver på dansk.
 - Kør `.\mvnw.cmd clean verify` (Java) / `dotnet build` + `dotnet test` (C#) efter ændringer.

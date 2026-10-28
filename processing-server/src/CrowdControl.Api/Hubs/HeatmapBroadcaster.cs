@@ -21,11 +21,11 @@ public class HeatmapBroadcaster : BackgroundService
     {
         while (stoppingToken.IsCancellationRequested == false)
         {
-            //har sat den til 3 sekunder, fordi det er jeg talte da jeg prøvede P og T's cloudflare link
+            // Set to 3 seconds, because that is what I counted when I tried P and T's Cloudflare link
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             HeatmapSnapshotDto snapshotDto = _aggregator.GetSnapshot();
-            // Slået fra: cellerne lægges sammen over tid i stedet for at nulstilles hvert 3. sekund
+            // Disabled: the cells accumulate over time instead of being reset every 3 seconds
             // _aggregator.Reset();
             _latest.Snapshot = snapshotDto;
 

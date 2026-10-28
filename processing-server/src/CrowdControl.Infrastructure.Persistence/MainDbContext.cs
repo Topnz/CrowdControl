@@ -4,12 +4,12 @@ namespace CrowdControl.Infrastructure.Persistence;
 
 public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(options)
 {
-    // Tilføj DbSet<T> for hver entitet, fx:
+    // Add a DbSet<T> for each entity, e.g.:
     // public DbSet<Event> Events => Set<Event>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Finder alle IEntityTypeConfiguration<T> i Configurations/
+        // Finds all IEntityTypeConfiguration<T> in Configurations/
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MainDbContext).Assembly);
     }
 }

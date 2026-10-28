@@ -4,13 +4,18 @@ import java.awt.geom.Path2D;
 import java.util.List;
 
 /**
- * Et område tegnet som polygon på kortet (eventets område eller en zone).
+ * An area drawn as a polygon on the map (the event area or a zone).
  */
 public class Boundary
 {
   private final List<GeoPoint> geoPoints;
   private final Path2D.Double polygon;
 
+  /**
+   * @param geoPoints the polygon's corners in the order they were drawn. The polygon is
+   *                  closed automatically between the last and the first corner.
+   * @throws IllegalArgumentException if there are fewer than 3 corners
+   */
   public Boundary(List<GeoPoint> geoPoints)
   {
     if (geoPoints == null || geoPoints.size() < 3)
@@ -19,21 +24,31 @@ public class Boundary
     this.polygon = toPolygon(this.geoPoints);
   }
 
+  /** @return the polygon's corners as an unmodifiable list */
   public List<GeoPoint> getGeoPoints()
   {
     return geoPoints;
   }
 
   /**
-   * Bruger lat/lon som plane koordinater (x = longitude, y = latitude), hvilket
-   * er præcist nok for områder på størrelse med en festival.
+   * Determines whether the point lies inside the polygon.
+   * Treats lat/lon as planar coordinates (x = longitude, y = latitude), which
+   * is accurate enough for areas the size of a festival.
+   *
+   * @param point the point to check
+   * @return true if the point lies inside the polygon
    */
   public boolean contains(GeoPoint point)
   {
     return polygon.contains(point.getLongitude(), point.getLatitude());
   }
 
-  /** Tegner polygonen: start i første hjørne, træk en linje til hvert af de næste, og luk den. */
+  /**
+   * Draws the polygon: start at the first corner, draw a line to each of the next ones, and close it.
+   *
+   * @param geoPoints the corners (at least 3)
+   * @return the polygon with x = longitude and y = latitude
+   */
   private static Path2D.Double toPolygon(List<GeoPoint> geoPoints)
   {
     Path2D.Double polygon = new Path2D.Double();
@@ -41,7 +56,7 @@ public class Boundary
 
     polygon.moveTo(first.getLongitude(), first.getLatitude());
 
-    // Start ved index 1, da første hjørne allerede er sat med moveTo
+    // Start at index 1, since the first corner is already set with moveTo
     for (int i = 1; i < geoPoints.size(); i++)
     {
       GeoPoint corner = geoPoints.get(i);

@@ -1,3 +1,9 @@
+/*
+ * Styling for the mobile app. Simple Apple-style design with light and dark themes.
+ * Loaded by index.html; no frameworks or build tools.
+ */
+
+/* Colours (light theme). All colours in the file come from here */
 :root {
   color-scheme: light dark;
   --bg: #f5f5f7;
@@ -10,6 +16,7 @@
   --danger: #ff3b30;
 }
 
+/* Dark theme follows the phone's setting */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #000000;
@@ -25,6 +32,7 @@
 
 * { box-sizing: border-box; }
 
+/* The phone's own font (SF Pro on iPhone, Roboto on Android) */
 body {
   margin: 0;
   background: var(--bg);
@@ -33,7 +41,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Knappen ligger i en fast top, så den kan nås, mens man scroller i teksten */
+/* The button sits in a fixed header, so it can be reached while scrolling through the text */
 header {
   position: sticky;
   top: 0;
@@ -45,6 +53,7 @@ header {
   border-bottom: 1px solid var(--border);
 }
 
+/* The content is centred and at most 520 px wide, so the text is easy to read */
 header > *, main { max-width: 520px; margin-left: auto; margin-right: auto; }
 
 h1 {
@@ -56,6 +65,7 @@ h1 {
   text-align: center;
 }
 
+/* Short summary above the button, so the key points come before consent (ID-15) */
 .lead {
   margin-top: 0;
   margin-bottom: 16px;
@@ -64,6 +74,7 @@ h1 {
   text-align: center;
 }
 
+/* Shared style for the consent and stop buttons: full width and rounded corners */
 button {
   display: block;
   width: 100%;
@@ -81,9 +92,10 @@ button {
 
 button:active { transform: scale(0.98); }
 
-/* button har display: block, så hidden-attributten skal have forrang */
+/* button has display: block, so the hidden attribute must take precedence */
 [hidden] { display: none !important; }
 
+/* Stop sharing (ID-18) is red, so it stands out from the consent button */
 button.stop { background: var(--danger); }
 
 button:disabled {
@@ -93,6 +105,7 @@ button:disabled {
   transform: none;
 }
 
+/* The status line below the buttons; the text is set by app.js */
 #status {
   margin-top: 10px;
   margin-bottom: 0;
@@ -101,10 +114,12 @@ button:disabled {
   text-align: center;
 }
 
+/* Hidden when there is no status to show */
 #status:empty { display: none; }
 
 main { padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); }
 
+/* The card with the full consent text (ID-15) */
 .card {
   padding: 4px 22px 20px;
   background: var(--card);
