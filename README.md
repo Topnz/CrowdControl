@@ -22,10 +22,14 @@ Mobil-appen bruger Geolocation API, som browsere kun tillader på `https://` ell
 |---|---|---|---|
 | `Infrastructure (docker compose)` | ✓ | ✓ | task `docker compose up` |
 | `Ingestion – offline` / `lokal` / `LAN` | ✓ | – | ✓ |
-| `Api – offline` / `lokal` / `LAN` (serverer også dashboardet) | – | ✓ | ✓ |
-| `Alt – lokal` / `Alt – LAN` (ingestion + Api sammen) | – | – | ✓ |
+| `Api – offline` / `lokal` / `LAN` (serverer også dashboardet på port 5262) | – | ✓ | ✓ |
+| `Dashboard – offline` / `lokal` / `LAN` (dashboardet alene på port 5111, kræver at Api'et kører) | – | ✓ | ✓ |
+| `Api + Dashboard – offline` / `lokal` / `LAN` | – | ✓ | – |
+| `Alt – lokal` / `Alt – LAN` (ingestion + Api + dashboard sammen) | – | – | ✓ |
 
-IntelliJ kan ikke køre .NET, og Rider kan ikke køre Maven. Kør derfor ingestion fra IntelliJ og Api'et fra Rider, eller det hele fra VS Code.
+IntelliJ kan ikke køre .NET, og Rider kan ikke køre Maven. Kør derfor ingestion fra IntelliJ og Api'et/dashboardet fra Rider, eller det hele fra VS Code.
+
+`Dashboard – …` kører dashboardet på sin egen dev-server (port 5111), som forberedelse til at det flyttes ud af processing-server. Det kalder Api'et på samme værtsnavn, port 5262 (`ApiBaseUrl` i `wwwroot/appsettings.json`), så Api'et skal køre i samme tilstand. Indtil flytningen serverer Api'et stadig også dashboardet på port 5262.
 
 ### Links
 
@@ -37,6 +41,8 @@ Mobil-app (offentligt link via Cloudflare-tunnel): https://<tilfældig>.trycloud
 Dashboard (denne maskine): http://localhost:5262
 Dashboard (LAN):           http://192.168.x.x:5262                                                   (kun LAN)
 ```
+
+`Dashboard – …` printer kun `Now listening on: http://localhost:5111`. I LAN-tilstand står der `0.0.0.0`. Brug i stedet den LAN-IP, Api'et printer, med port 5111.
 
 RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `crowdcontrol`).
 
@@ -50,10 +56,10 @@ RabbitMQ's management-UI ligger på http://localhost:15672 (bruger og kodeord: `
 
    Genstart IDE'en bagefter, så den får den nye `PATH`. Uden `cloudflared` starter ingestion stadig, men printer en advarsel i stedet for et tunnel-link.
 3. **VS Code:** installér de anbefalede udvidelser (C# og Docker), når VS Code foreslår dem. Java-udvidelser er ikke nødvendige, fordi ingestion køres via Maven.
-4. **Windows-firewall:** første gang du kører `Api – LAN`, spørger Windows, om programmet må bruge netværket. Tillad det for private netværk, ellers kan andre ikke åbne dashboardet.
+4. **Windows-firewall:** første gang du kører `Api – LAN` eller `Dashboard – LAN`, spørger Windows, om programmet må bruge netværket. Tillad det for private netværk, ellers kan andre ikke åbne dashboardet.
 
 ### Fejlfinding
 
-- **Port 8080 eller 5262 er optaget:** en anden instans kører allerede, fx fra en anden IDE eller terminal. Stop den først.
+- **Port 8080, 5262 eller 5111 er optaget:** en anden instans kører allerede, fx fra en anden IDE eller terminal. Stop den først.
 - **Ingen prikker på dashboardet:** ingestion kører i `offline`, så positionerne kun bliver logget. Brug `lokal` eller `LAN`.
 - **Tunnelen lever videre efter stop:** hvis ingestion blev dræbt hårdt, kan `cloudflared` køre videre. Stop processen `cloudflared` manuelt.

@@ -67,6 +67,27 @@
       "console": "integratedTerminal"
     },
     {
+      "name": "Dashboard – offline",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/processing-server",
+      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile offline"
+    },
+    {
+      "name": "Dashboard – lokal",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/processing-server",
+      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lokal"
+    },
+    {
+      "name": "Dashboard – LAN",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/processing-server",
+      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lan"
+    },
+    {
       "name": "Ingestion – lokal (uden docker)",
       "type": "node-terminal",
       "request": "launch",
@@ -93,10 +114,9 @@
       }
     },
     {
-      "name": "Api – lokal (uden docker)",
+      "name": "Api – lokal (uden docker og build)",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build api",
       "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
       "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
       "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
@@ -107,10 +127,9 @@
       }
     },
     {
-      "name": "Api – LAN (uden docker)",
+      "name": "Api – LAN (uden docker og build)",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build api",
       "program": "${workspaceFolder}/processing-server/src/CrowdControl.Api/bin/Debug/net10.0/CrowdControl.Api.dll",
       "cwd": "${workspaceFolder}/processing-server/src/CrowdControl.Api",
       "launchSettingsFilePath": "${workspaceFolder}/processing-server/src/CrowdControl.Api/Properties/launchSettings.json",
@@ -119,25 +138,47 @@
       "presentation": {
         "hidden": true
       }
+    },
+    {
+      "name": "Dashboard – lokal (uden build)",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/processing-server",
+      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lokal --no-build",
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Dashboard – LAN (uden build)",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/processing-server",
+      "command": "dotnet run --project src/CrowdControl.Dashboard --launch-profile lan --no-build",
+      "presentation": {
+        "hidden": true
+      }
     }
   ],
   "compounds": [
     {
       "name": "Alt – lokal",
-      "preLaunchTask": "docker compose up",
+      "preLaunchTask": "docker compose up + build api",
       "stopAll": true,
       "configurations": [
         "Ingestion – lokal (uden docker)",
-        "Api – lokal (uden docker)"
+        "Api – lokal (uden docker og build)",
+        "Dashboard – lokal (uden build)"
       ]
     },
     {
       "name": "Alt – LAN",
-      "preLaunchTask": "docker compose up",
+      "preLaunchTask": "docker compose up + build api",
       "stopAll": true,
       "configurations": [
         "Ingestion – LAN (uden docker)",
-        "Api – LAN (uden docker)"
+        "Api – LAN (uden docker og build)",
+        "Dashboard – LAN (uden build)"
       ]
     }
   ]

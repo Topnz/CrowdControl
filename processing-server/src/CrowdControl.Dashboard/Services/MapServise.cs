@@ -1,5 +1,4 @@
 using CrowdControl.Shared;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 
@@ -8,14 +7,14 @@ namespace CrowdControl.Dashboard.Services;
 public class MapService : IAsyncDisposable
 {
     private readonly IJSRuntime _js;
-    private readonly NavigationManager _navigation;
+    private readonly ApiAddress _api;
     private HubConnection? _hub;
     private bool _mapInitialized;
 
-    public MapService(IJSRuntime js, NavigationManager navigation)
+    public MapService(IJSRuntime js, ApiAddress api)
     {
         _js = js;
-        _navigation = navigation;
+        _api = api;
     }
 
     public async Task InitializeAsync()
@@ -30,7 +29,7 @@ public class MapService : IAsyncDisposable
     private async Task StartHeatmapFeedAsync()
     {
         _hub = new HubConnectionBuilder()
-            .WithUrl(_navigation.ToAbsoluteUri("/hubs/heatmap"))
+            .WithUrl(_api.Resolve("/hubs/heatmap"))
             .WithAutomaticReconnect()
             .Build();
 

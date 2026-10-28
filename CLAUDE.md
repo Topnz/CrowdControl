@@ -212,8 +212,9 @@ Alle har de samme konfigurationer ved den grønne startknap. De ligger i git og 
 | `LAN` | `lan`: starter en Cloudflare quick tunnel (`cloudflared`) og printer et offentligt HTTPS-link. HTTPS er krævet af Geolocation API | `lan` → `Development`, `0.0.0.0:5262`, printer et link pr. LAN-IP | Ja, startes før |
 
 - **IntelliJ:** `.run/` i roden (`Infrastructure (docker compose)`, `Ingestion – offline/lokal/LAN` som Maven-konfigurationer med `-pl bootstrap -am spring-boot:run`; `-am`, så søskendemoduler bygges med i stedet for at blive hentet fra `~/.m2`).
-- **Rider:** `processing-server/.run/` (`Api – offline/lokal/LAN`). `launchSettings.json` indeholder kun de tre profiler; der må ikke tilføjes `http`/`https`-profiler.
-- **VS Code:** `.vscode/launch.json` + `tasks.json` (de eneste filer i `.vscode/`, der er i git). Compounds `Alt – lokal` og `Alt – LAN` starter ingestion og Api sammen.
+- **Rider:** `processing-server/.run/` (`Infrastructure (docker compose)` med `../docker-compose.yml`, `Api – offline/lokal/LAN`, `Dashboard – offline/lokal/LAN` og compounds `Api + Dashboard – …`). Rider ser kun `.run/` ved siden af solutionen, så docker-konfigurationen findes i begge `.run/`-mapper. Api'ets og Dashboardets `launchSettings.json` indeholder kun de tre profiler (Dashboard på port 5111); der må ikke tilføjes `http`/`https`-profiler.
+- **VS Code:** `.vscode/launch.json` + `tasks.json` (de eneste filer i `.vscode/`, der er i git). Compounds `Alt – lokal` og `Alt – LAN` starter ingestion, Api og dashboard sammen. De bygger Api'et én gang først og starter Api og dashboard med `--no-build`, da Api'et refererer Dashboard-projektet, og to samtidige builds låser `obj/`.
+- **Dashboard alene** (`Dashboard – …`, port 5111) kalder Api'et via `ApiBaseUrl` i `wwwroot/appsettings.json` (`http://{host}:5262`, `{host}` = det værtsnavn, dashboardet er åbnet på). Api'et tillader dashboardets origin via CORS (`Dashboard:Origins`; alle origins i Development/Offline).
 - Links printes ved opstart af `bootstrap/…/startup/` (Java) og `Api/StartupLinks.cs` (C#). Nye applikationer skal også printe deres link.
 
 ---
@@ -578,7 +579,7 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 Øvrige filer/indstillinger, der hører til dashboardet og skal med eller ryddes op:
 
 - `wwwroot/lib/bootstrap/dist/css/bootstrap.min.css`: flyttes med. `.gitignore`-noten i afsnit 8 (`dist/` må ikke ignoreres) gælder fortsat, men for den nye sti.
-- `Properties/launchSettings.json`: dashboardets egen (port 5111) er slettet, så dashboardet kun startes via Api'et, indtil det flyttes. Ved flytningen laves en ny med profilerne `offline`/`lokal`/`lan` og tilsvarende `Dashboard – …`-konfigurationer (afsnit 4.1). I `Api`'s `launchSettings.json` skal `inspectUri` (WASM-debugging) fjernes, hvis den findes.
+- `Properties/launchSettings.json`: dashboardet har profilerne `offline`/`lokal`/`lan` (port 5111) og `Dashboard – …`-konfigurationer (afsnit 4.1). De flyttes med. I `Api`'s `launchSettings.json` skal `inspectUri` (WASM-debugging) fjernes, hvis den findes.
 - `.github/workflows/processing-server.yml` bygger hele solutionen og dermed i dag også dashboardet. Efter flytningen bygger den kun serveren; dashboardet får sin egen workflow (trin 8).
 
 **Trin:**
@@ -588,11 +589,11 @@ Brug de samme versioner som i dag (10.0.13 for `Microsoft.AspNetCore.*`), så de
 - [ ] 2. Opret `dashboard/` med solution, Core, Adapters, WASM-projekt og testprojekt (`dotnet new sln --format sln`, som i afsnit 6.1).
 - [ ] 3. Flyt `Pages/`, `Layout/`, `App.razor`, `_Imports.razor` og `wwwroot/` (inkl. `map.js` og `lib/bootstrap/dist/css/bootstrap.min.css`) over. Slet skabelonresten `wwwroot/sample-data/weather.json`.
 - [ ] 4. `Services/MapServise.cs` (stavefejl, klassen hedder `MapService`) splittes: `IHeatmapFeed` i Core, `SignalRHeatmapFeed` i Adapters og en `FakeHeatmapFeed`, så UI kan køre uden backend.
-- [ ] 5. **API-adresse:** i dag bruger dashboardet sin egen origin (`HttpClient.BaseAddress = HostEnvironment.BaseAddress` og `NavigationManager.ToAbsoluteUri("/hubs/heatmap")`). Det virker ikke længere, når dashboardet har sin egen origin. Indfør `ApiBaseUrl` i `wwwroot/appsettings.json` / `appsettings.Offline.json` (Api'et kører på `http://localhost:5262`) og byg HttpClient- og hub-URL ud fra den.
+- [x] 5. **API-adresse:** `ApiBaseUrl` i `wwwroot/appsettings.json` (`http://{host}:5262`) læses af `Services/ApiAddress.cs`, som HttpClient og hub-URL bygges ud fra. Api'et har en CORS-policy (`Dashboard:Origins`, alle origins i Development/Offline), så den del af trin 6 er også gjort.
 - [ ] 6. Processing-server: fjern projekter, pakker og referencer jf. tabellen ovenfor, og fjern `UseStaticWebAssets()` (Offline), `UseWebAssemblyDebugging()`, `UseBlazorFrameworkFiles()`, `UseStaticFiles()` og `MapFallbackToFile("index.html")` fra `Program.cs`. Tilføj en CORS-policy for dashboardets origin (konfigurerbar; SignalR kræver `AllowCredentials` + eksplicit origin).
 - [ ] 7. Login (ID-30/31/32), når det implementeres: JWT bearer i Api; dashboardet gemmer tokenet og sender det i `Authorization`-headeren og via `accessTokenFactory` til SignalR. Hub og controllers får `[Authorize]`.
 - [ ] 8. CI: ny `.github/workflows/dashboard.yml` med path-filter `dashboard/**` + `contracts/**`. Fjern dashboard-delen fra `processing-server.yml`, hvis den har nogen.
-- [ ] 9. Kørsel: `Dashboard – offline/lokal/LAN` i alle tre IDE'er jf. afsnit 4.1 (Rider i `processing-server/.run/` eller `dashboard/.run/`, VS Code i `.vscode/launch.json` inkl. compounds). Dashboardet printer sit eget link; Api'et printer så kun API-adressen.
+- [ ] 9. Kørsel: `Dashboard – offline/lokal/LAN` findes i Rider (`processing-server/.run/`) og VS Code (inkl. compounds). Mangler ved flytningen: flyt Rider-konfigurationerne til `dashboard/.run/`, opdatér stierne i `.vscode/`, drop `--no-build`-varianterne (ingen delt build længere), lad dashboardet printe sit eget LAN-link (dev-serveren printer kun `0.0.0.0`), og lad Api'et kun printe API-adressen.
 - [ ] 10. Docker (valgfrit, senere): `dashboard`-service i `docker-compose.yml`, der serverer `dotnet publish`-output statisk.
 - [ ] 11. Opdatér dokumentationen: C2-diagrammet (`c2.drawio` → `c2.png`: dashboardet serveres ikke længere af processing-server), og i denne fil afsnit 1 (container- og kommunikationstabellerne: "Dashboard → Processing-server: Henter statisk indhold" udgår), afsnit 3 (repo-struktur), 6.1–6.3 (Dashboard/Shared udgår; `IHeatmapFeed` flyttes til `dashboard/`), 8 (stien til `bootstrap.min.css`) og 10 (kør også `dotnet build` + `dotnet test` i `dashboard/`). Fjern ⚠-boksen øverst.
 - [ ] 12. Verificér: `dotnet build` + `dotnet test` grøn i både `processing-server/` og `dashboard/`; live heatmap virker end-to-end (Api + dashboard) og med fake-feed alene.

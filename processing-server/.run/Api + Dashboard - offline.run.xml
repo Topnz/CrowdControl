@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Api + Dashboard – offline" type="CompoundRunConfigurationType">
+    <toRun name="Api – offline" type="LaunchSettings" />
+    <toRun name="Dashboard – offline" type="LaunchSettings" />
+    <method v="2" />
+  </configuration>
+</component>
