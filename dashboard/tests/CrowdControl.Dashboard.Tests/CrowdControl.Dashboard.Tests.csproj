@@ -20,7 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CrowdControl.Dashboard\CrowdControl.Dashboard.csproj" />
+    <ProjectReference Include="..\..\src\CrowdControl.Dashboard.Core\CrowdControl.Dashboard.Core.csproj" />
+    <ProjectReference Include="..\..\src\CrowdControl.Dashboard.Adapters\CrowdControl.Dashboard.Adapters.csproj" />
   </ItemGroup>
 
   <ItemGroup>

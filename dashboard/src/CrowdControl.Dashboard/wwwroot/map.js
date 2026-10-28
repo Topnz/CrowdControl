@@ -1,5 +1,4 @@
 let map;
-let marker;
 let heatLayer;
 
 window.initMap = function () {
@@ -19,12 +18,6 @@ window.disposeMap = function () {
         map = null;
         heatLayer = null;
     }
-};
-
-window.addMapPoint = function (latitude, longitude) {
-    L.marker([latitude, longitude])
-        .addTo(map)
-        .bindPopup();
 };
 
 // Draws a HeatmapSnapshotDto: one dot per grid cell in the middle of the cell, coloured by count

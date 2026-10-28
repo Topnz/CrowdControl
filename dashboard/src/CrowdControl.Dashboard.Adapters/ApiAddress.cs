@@ -1,4 +1,4 @@
-namespace CrowdControl.Dashboard.Services;
+namespace CrowdControl.Dashboard.Adapters;
 
 // The address of the Api (REST + SignalR). Read from "ApiBaseUrl" in wwwroot/appsettings.json,
 // where {host} is replaced with the host name the dashboard was opened on. That way the same

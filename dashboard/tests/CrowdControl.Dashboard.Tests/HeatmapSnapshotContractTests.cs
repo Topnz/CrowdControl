@@ -1,5 +1,5 @@
 using System.Text.Json;
-using CrowdControl.Dashboard.Contracts;
+using CrowdControl.Dashboard.Core.Contracts;
 using Json.Schema;
 
 namespace CrowdControl.Dashboard.Tests;
@@ -50,7 +50,7 @@ public class HeatmapSnapshotContractTests
         AssertMatchesContract(JsonSerializer.SerializeToElement(snapshot, WebJson));
     }
 
-    private static void AssertMatchesContract(JsonElement json)
+    internal static void AssertMatchesContract(JsonElement json)
     {
         EvaluationResults result = Schema.Evaluate(json, new EvaluationOptions
         {
@@ -63,4 +63,7 @@ public class HeatmapSnapshotContractTests
             .SelectMany(detail => detail.Errors!.Select(error => $"{detail.InstanceLocation}: {error.Value}"));
         Assert.True(result.IsValid, $"Snapshot does not match HeatmapSnapshot.v1.json:\n{string.Join("\n", errors)}\n{json}");
     }
+
+    internal static void AssertMatchesContract(HeatmapSnapshotDto snapshot) =>
+        AssertMatchesContract(JsonSerializer.SerializeToElement(snapshot, WebJson));
 }

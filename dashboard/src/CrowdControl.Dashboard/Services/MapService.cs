@@ -1,20 +1,21 @@
-using CrowdControl.Dashboard.Contracts;
-using Microsoft.AspNetCore.SignalR.Client;
+using CrowdControl.Dashboard.Core.Contracts;
+using CrowdControl.Dashboard.Core.Ports;
 using Microsoft.JSInterop;
 
 namespace CrowdControl.Dashboard.Services;
 
+// Draws the map (Leaflet via map.js) and renders every snapshot from the heatmap feed.
+// Whether the feed is SignalR or a fake is decided in Program.cs.
 public class MapService : IAsyncDisposable
 {
     private readonly IJSRuntime _js;
-    private readonly ApiAddress _api;
-    private HubConnection? _hub;
+    private readonly IHeatmapFeed _feed;
     private bool _mapInitialized;
 
-    public MapService(IJSRuntime js, ApiAddress api)
+    public MapService(IJSRuntime js, IHeatmapFeed feed)
     {
         _js = js;
-        _api = api;
+        _feed = feed;
     }
 
     public async Task InitializeAsync()
@@ -22,51 +23,22 @@ public class MapService : IAsyncDisposable
         await _js.InvokeVoidAsync("initMap");
         _mapInitialized = true;
 
-        await StartHeatmapFeedAsync();
+        _feed.SnapshotReceived += RenderAsync;
+        await _feed.StartAsync();
     }
 
-    // Listens to HeatmapBroadcaster in Api (/hubs/heatmap), which sends a snapshot every 3 seconds
-    private async Task StartHeatmapFeedAsync()
+    private async Task RenderAsync(HeatmapSnapshotDto snapshot)
     {
-        _hub = new HubConnectionBuilder()
-            .WithUrl(_api.Resolve("/hubs/heatmap"))
-            .WithAutomaticReconnect()
-            .Build();
-
-        _hub.On<HeatmapSnapshotDto>("HeatmapUpdated", async snapshot =>
+        if (_mapInitialized)
         {
-            if (_mapInitialized)
-            {
-                await _js.InvokeVoidAsync("renderHeatmap", snapshot);
-            }
-        });
-
-        await _hub.StartAsync();
-    }
-
-    public async Task AddPointAsync(
-        double latitude,
-        double longitude)
-    {
-        if (!_mapInitialized)
-        {
-            throw new InvalidOperationException(
-                "The map has not been initialized.");
+            await _js.InvokeVoidAsync("renderHeatmap", snapshot);
         }
-
-        await _js.InvokeVoidAsync(
-            "addMapPoint",
-            latitude,
-            longitude);
     }
 
     public async ValueTask DisposeAsync()
     {
         _mapInitialized = false;
-        if (_hub != null)
-        {
-            await _hub.DisposeAsync();
-            _hub = null;
-        }
+        _feed.SnapshotReceived -= RenderAsync;
+        await _feed.DisposeAsync();
     }
 }

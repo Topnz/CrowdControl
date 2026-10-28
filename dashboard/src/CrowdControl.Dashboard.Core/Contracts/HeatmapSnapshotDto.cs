@@ -1,4 +1,4 @@
-namespace CrowdControl.Dashboard.Contracts;
+namespace CrowdControl.Dashboard.Core.Contracts;
 
 /// <summary>
 /// Heatmap snapshot received from processing-server via SignalR (HeatmapUpdated) and GET /heatmap.

@@ -10,7 +10,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
+  </ItemGroup>
+
+  <!-- Core <- Adapters <- Dashboard: the UI only talks to the ports, never to SignalR directly -->
+  <ItemGroup>
+    <ProjectReference Include="..\CrowdControl.Dashboard.Core\CrowdControl.Dashboard.Core.csproj" />
+    <ProjectReference Include="..\CrowdControl.Dashboard.Adapters\CrowdControl.Dashboard.Adapters.csproj" />
   </ItemGroup>
 
 </Project>
