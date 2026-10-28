@@ -4,11 +4,13 @@ Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projekt
 
 > **Next session – start here (updated 2026-10-29). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
 >
-> 1. **Urgent:** agree on the fields in `contracts/`, including the send interval and end time for the mobile app. This blocks events and zones in the Api.
-> 2. **To-dos, can be done whenever:**
->    - Dashboard (9.1): `map.fitBounds` on the first snapshot, so the map zooms to the data.
->    - Dashboard (9.1): a status message instead of a crash when the Api is down.
->    - Central package management (`Directory.Packages.props`, see §9).
+> Nothing is urgent. Before starting any of these, check that it belongs to a user story in the current sprint (§10).
+>
+> **To-dos, can be done whenever:**
+> - **HeatmapSnapshot v2:** agree on what the snapshot sent to the dashboard over SignalR should contain, and use the fields Java already sends. Seven decisions, with the background, are in §9 ("HeatmapSnapshot v2").
+> - Dashboard (9.1): `map.fitBounds` on the first snapshot, so the map zooms to the data.
+> - Dashboard (9.1): a status message instead of a crash when the Api is down.
+> - Central package management (`Directory.Packages.props`, see §9).
 >
 > Machine state: the .NET 10 SDK, Docker Desktop and `gh` (logged in as iMannys) are installed. Docker's `bin` folder may be missing from the PATH of an older terminal; restart the terminal or IDE. The Windows service `postgresql-x64-18` is stopped and set to Manual; since main-db moved to port 5434 it no longer conflicts, so it can be started again if needed.
 
@@ -603,7 +605,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
 
 **Næste skridt**
 
-- [ ] Aftal felterne i `contracts/` (schemas og request/response-typer), inkl. sendeinterval og sluttid til mobil-appen.
+- [ ] **Fields in `contracts/`.** Mostly agreed in PR #9: `GET /events/{eventId}` (`EventInfo` with `endTime` and `sendIntervalSeconds` for the mobile app), `POST /positions`, `PositionReceived`, `EventCreated`/`EventUpdated` and `Event`/`Zone`/`Polygon` in `common.v1.json`. Still missing: the snapshot changes (HeatmapSnapshot v2 below), the dashboard's endpoints for creating/editing/deleting events and zones (ID-7, ID-8) and listing events with status, login and passwords (ID-30/31/32), and the fields of `HeatmapHistory` (still `TODO` in `processing-api.yaml`, ID-37/38).
 - [ ] Gør acceptkriterierne i `docs/architecture/analyse/krav/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
 - [x] C1–C4 i drawio og klassediagram for hele systemet i PlantUML (`docs/architecture/design/`). Den gamle `c2.drawio`/`c2.png` og `class-diagram.drawio` er slettet. C4-diagrammerne bruger drawio's C4-elementer med ortogonale (90°) pile: personer `mxgraph.c4.person2` (#6b6477), softwaresystem #3c6bb3, containere #5b9bd5, komponenter #dae8fc, domæne #d5e8d4, eksterne systemer #999999. Planlagte dele tegnes stiplet grå (#eef1f6/#8c9ab3). Sekvens-, protokol- og klassediagrammer laves i PlantUML.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
@@ -612,7 +614,31 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
 - [x] **Moved main-db's host port from 5432 to 5434 (2026-10-29):** a PostgreSQL installed directly on Windows (e.g. the service `postgresql-x64-18`) also uses 5432, so the Api connected to it instead of docker's main-db and failed with `28P01: password authentication failed for user "crowdcontrol"`. Only the host port changed (`"5434:5432"` in `docker-compose.yml`, `Port=5434` in the Api's `appsettings.json`); the container port stays 5432, and event-db (5433) and ingestion are not affected. Merged in PR #29. **Everyone must run `docker compose up -d` once after pulling**, so main-db is recreated with the new port mapping; until then it still listens on 5432 and the Api (now on 5434) cannot connect. Check with `docker compose ps` that main-db shows `0.0.0.0:5434->5432`. The data in the volume is kept.
 - [ ] **Central package management:** add a `Directory.Packages.props` to both `processing-server/` and `dashboard/` (separate small PR), so `Microsoft.AspNetCore.*` versions (10.0.13 today) cannot drift apart between the two solutions.
 - [ ] **Open question: where does grid aggregation belong?** §3 says `CrowdControl.Domain` holds grid aggregation, but `GridAggregator` lives in `Application/MonitorEvent/`. Decide whether the aggregation rule moves to `Domain` (e.g. when history, ID-10, makes stored grid cells a domain concept) or whether §3 should be corrected.
-- [ ] **HeatmapSnapshot v2 (later, once events and zones exist in the Api):** add `eventId` to the snapshot and `zoneId` to each `ZoneCount` in `contracts/schemas/signalr/HeatmapSnapshot.v2.json`, so the dashboard can tell events and zones apart by ID instead of by name. v1 deliberately describes the snapshot as the Api sends it today (no IDs), so the dashboard move stays a pure move.
+- [ ] **HeatmapSnapshot v2 (to-do, no deadline; best done once events and zones exist in the Api).** v1 deliberately describes the snapshot as the Api sends it today, so the dashboard move stayed a pure move. Reviewed on 2026-10-29: a lot is sent along the chain Java → Api → dashboard and never used.
+
+  *Java → Api (`PositionReceived` on the `positions` queue).* `ReceivePositionService` only calls `_aggregator.Add(latitude, longitude)`:
+
+  | Field | Used in C#? | Consequence |
+  |---|---|---|
+  | `latitude`, `longitude` | Yes | – |
+  | `sessionId` | No | `count` is the number of **positions**, not **participants**. With a 10 s send interval one person counts 6 times a minute. |
+  | `timestamp` | No | Counts add up from when the Api started and are never reset, so after an hour the map shows "where people have ever been", not "where they are now". |
+  | `eventId` | No | There is one global `GridAggregator("Positioner fra køen")` with its origin at (0, 0) (`Program.cs`), so all events are mixed together. |
+  | `zoneIds` | No | Java looks up the zones, but C# ignores them and computes them again with `PolygonHelper.IsInside`. Duplicate work, and the two sides can disagree. |
+  | `accuracy` | No | Imprecise positions are not filtered out (ID-40). |
+
+  *Api → dashboard (`HeatmapSnapshot.v1` over SignalR and `GET /heatmap`).* `map.js` only uses `cells`, `minLat`, `minLon`, `cellSizeLat` and `cellSizeLon`. `eventName` and `timestamp` are not shown. `zones` (`name`, `capacity`, `count`) has no UI yet: no zone counts, no 90 % notification, no marking when capacity is exceeded. Only `FakeHeatmapFeed` fills them in.
+
+  *Decisions for v2* (`contracts/schemas/signalr/HeatmapSnapshot.v2.json`):
+  1. **What does `count` mean?** Proposal: the number of distinct `sessionId`s within a time window (e.g. the last send interval or the last 60 s), so it means "participants right now". This is the most important decision, since it changes both cell and zone counts.
+  2. **Who decides which zones a position is in?** Either C# uses Java's `zoneIds` and drops `PolygonHelper`, or `zoneIds` is removed from `PositionReceived`. Section 1 says Java does it.
+  3. **`eventId` in the snapshot and `zoneId` on each `ZoneCount`,** so the dashboard tells events and zones apart by ID instead of by name. Requires one aggregator per event.
+  4. **Threshold for `accuracy`:** reject positions above X metres before counting (ID-40). A fixed value or one per event?
+  5. **Keep `timestamp` and `eventName`?** They are cheap and useful (e.g. "last updated at …"), but then the dashboard should show them.
+  6. **Maybe `windowSeconds`** in the snapshot, so the dashboard can say what the count covers.
+  7. **Rename `x`/`y` to `column`/`row`** (see §1.3). Done in v2 so there is one breaking change instead of two.
+
+  Changing the snapshot affects `GridAggregator`/`GridCell`/`ZoneCount` in Application, both sets of DTOs (Api and dashboard), `HeatmapSnapshotMapping`, `map.js`, `FakeHeatmapFeed`, the contract tests on both sides, and history (ID-38), so agree on it in the team first.
 
 ### 9.1 Dashboard moved out of processing-server (done 2026-10-28)
 
@@ -637,6 +663,8 @@ The dashboard is its own container in C2, but it used to live in `CrowdControl.P
 ---
 
 ## 10. Regler for Claude Code i dette repo
+
+- **Stay within the sprint (Scrum / Unified Process).** Before starting a feature, refactor or contract change, Claude must check, and ask if it is not clear, which user story in the current sprint the work belongs to (story IDs such as ID-17 are in `docs/architecture/analyse/krav/user-stories.md`; the sprint itself is in Jira project `ID`, which Claude cannot see, so ask). If the work does not fit a story in the sprint, say so before writing code, and suggest putting it on the backlog or agreeing on it with the team instead. This also applies to to-dos in this file and to "while we're at it" changes: they are done only when they belong to the sprint or the user explicitly says to do them anyway. When it fits, name the story in the commit or PR.
 
 - Tilføj **aldrig** Spring-, JDBC-, RabbitMQ- eller andre framework-afhængigheder til `domain` eller `application` (Java) / `Domain` eller `Application` (C#).
 - Nye integrationer bliver en ny port i `application` og en adapter i sit eget modul – ikke kode direkte i en service.
