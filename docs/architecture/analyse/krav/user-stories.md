@@ -28,8 +28,8 @@ o	Acceptkriterier: Ingestion-serveren håndhæver en grænse for, hvor mange pos
 o	Beskrivelse: Arrangøren angiver sendeintervallet for et event i dashboardet. Mobil-appen henter intervallet og sender positioner i det tempo.
 o	Acceptkriterier: Arrangøren kan angive sendeintervallet i dashboardet. Mobil-appen henter intervallet for eventet. Mobil-appen sender positioner i det angivne interval.
 •	ID-40. Som Arrangør ønsker jeg, at positionsdataen indeholder nøjagtighed i meter, for at jeg korrekt kan vide, om de pågældende data falder inden for en zone, med en vis sandsynlighed, så jeg kan frasortere irrelevante data.
-o	Beskrivelse: Hver position har en nøjagtighed i meter fra mobilens Geolocation API. Arrangøren kan se nøjagtigheden for data fra den enkelte enhed og frasortere upræcise data, så det kan vurderes, om en position med en vis sandsynlighed ligger inden for en zone.
-o	Acceptkriterier: Positionsdata indeholder nøjagtighed i meter. Arrangøren kan se nøjagtigheden for data fra den enkelte enhed. Upræcise data kan frasorteres.
+o	Beskrivelse: Hver position har en nøjagtighed i meter fra mobilens Geolocation API. Upræcise positioner frasorteres, før de tælles med, så en position kun tælles i en zone, når den med en vis sandsynlighed ligger der. Arrangøren ser kun samlede tal og aldrig data fra den enkelte enhed, som lovet på samtykkesiden.
+o	Acceptkriterier: Positionsdata indeholder nøjagtighed i meter. Data og nøjagtighed for den enkelte enhed vises ikke for arrangøren; nøjagtigheden bruges kun til at frasortere upræcise positioner. Positioner med en nøjagtighed over 50 meter frasorteres og tælles ikke med i heatmappet eller zonerne.
 ID-7 Administrér event
 •	ID-13. Som Arrangør, ønsker jeg at kunne oprette et event med navn, start- og sluttid og et område tegnet på et kort, så systemet ved, hvor og hvornår der skal indsamles data.
 o	Beskrivelse: I dashboardet udfylder arrangøren navn, start- og sluttid og tegner eventets område som en polygon på et kort. Eventet gemmes og bliver kendt af ingestion-serveren.

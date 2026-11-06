@@ -625,7 +625,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
   | `timestamp` | No | Counts add up from when the Api started and are never reset, so after an hour the map shows "where people have ever been", not "where they are now". |
   | `eventId` | No | There is one global `GridAggregator("Positioner fra køen")` with its origin at (0, 0) (`Program.cs`), so all events are mixed together. |
   | `zoneIds` | No | Java looks up the zones, but C# ignores them and computes them again with `PolygonHelper.IsInside`. Duplicate work, and the two sides can disagree. |
-  | `accuracy` | No | Imprecise positions are not filtered out (ID-40). |
+  | `accuracy` | Yes | `ReceivePositionService` skips positions above `MaxAccuracyMeters` (50 m, fixed) before counting (ID-40). |
 
   *Api → dashboard (`HeatmapSnapshot.v1` over SignalR and `GET /heatmap`).* `map.js` only uses `cells`, `minLat`, `minLon`, `cellSizeLat` and `cellSizeLon`. `eventName` and `timestamp` are not shown. `zones` (`name`, `capacity`, `count`) has no UI yet: no zone counts, no 90 % notification, no marking when capacity is exceeded. Only `FakeHeatmapFeed` fills them in.
 
@@ -633,7 +633,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
   1. **What does `count` mean?** Proposal: the number of distinct `sessionId`s within a time window (e.g. the last send interval or the last 60 s), so it means "participants right now". This is the most important decision, since it changes both cell and zone counts.
   2. **Who decides which zones a position is in?** Either C# uses Java's `zoneIds` and drops `PolygonHelper`, or `zoneIds` is removed from `PositionReceived`. Section 1 says Java does it.
   3. **`eventId` in the snapshot and `zoneId` on each `ZoneCount`,** so the dashboard tells events and zones apart by ID instead of by name. Requires one aggregator per event.
-  4. **Threshold for `accuracy`:** reject positions above X metres before counting (ID-40). A fixed value or one per event?
+  4. ~~**Threshold for `accuracy`**~~ Decided in ID-40: a fixed 50 m in C#. A value per event would need a field in `contracts/`.
   5. **Keep `timestamp` and `eventName`?** They are cheap and useful (e.g. "last updated at …"), but then the dashboard should show them.
   6. **Maybe `windowSeconds`** in the snapshot, so the dashboard can say what the count covers.
   7. **Rename `x`/`y` to `column`/`row`** (see §1.3). Done in v2 so there is one breaking change instead of two.
