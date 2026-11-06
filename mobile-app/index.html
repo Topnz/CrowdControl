@@ -14,13 +14,15 @@
     <p class="lead">Vi sender kun din position og et pseudonymt session-ID. Det sammentalte antal personer gemmes i 24 måneder. Læs mere nedenfor.</p>
     <button id="consent">Jeg accepterer at dele min position</button>
     <button id="stop" class="stop" hidden>Stop deling</button>
+    <!-- ID-22: whether the position is shared right now; the text is set by app.js -->
+    <p id="sharing" class="sharing off" aria-live="polite">Deler ikke</p>
     <p id="status" aria-live="polite"></p>
   </header>
 
   <!-- The content scrolls beneath the fixed header -->
   <main>
     <article class="card">
-      <!-- The full consent text; sharing is described as it will work once ID-18, ID-21 and ID-22 are done -->
+      <!-- The full consent text; sharing is described as it will work once ID-21 (automatic stop) is done -->
       <!-- DUMMY: The organiser's name and contact details are made up and must be replaced with the real ones -->
       <h2>Hvorfor</h2>
       <p><strong>Eksempel Festival ApS (dummy)</strong> vil gerne vide, hvor mange mennesker der er de forskellige steder på eventet, så de kan undgå trængsel og gøre eventet mere sikkert. Det kan du hjælpe med ved at dele din position, mens du er på eventet.</p>
