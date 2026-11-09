@@ -2,9 +2,11 @@
 
 Denne fil samler arkitektur, beslutninger og opsætning for CrowdControl-projektet (SEP3). Den er skrevet til at ligge i repo-roden som `CLAUDE.md`, så Claude Code automatisk læser den.
 
-> **Next session – start here (updated 2026-10-29). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
+> **Next session – start here (updated 2026-11-10). Claude must mention this box in the first reply of a session and update or remove it as the items are done:**
 >
 > Nothing is urgent. Before starting any of these, check that it belongs to a user story in the current sprint (§10).
+>
+> **Follow-ups from ID-13 (create event, PR #33):** `EventCreated` to ingestion (ID-23), `GET /events/{id}`, EF Core repositories + migration, and three team decisions. Details in §9.2.
 >
 > **To-dos, can be done whenever:**
 > - **HeatmapSnapshot v2:** agree on what the snapshot sent to the dashboard over SignalR should contain, and use the fields Java already sends. Seven decisions, with the background, are in §9 ("HeatmapSnapshot v2").
@@ -295,6 +297,7 @@ Alle har de samme konfigurationer ved den grønne startknap. De ligger i git og 
 - **VS Code:** `.vscode/launch.json` + `tasks.json` (de eneste filer i `.vscode/`, der er i git). Compounds `Alt – lokal` og `Alt – LAN` starter ingestion, Api og dashboard sammen. They build the Api once first (preLaunchTask) and start it with the built output; the dashboard builds itself, since the two solutions no longer share any project.
 - **Dashboard** (`Dashboard – …`, port 5111) is a standalone static site and the only way to open the dashboard; the Api serves REST + SignalR only. It calls the Api via `ApiBaseUrl` in `wwwroot/appsettings.json` (`http://{host}:5262`, `{host}` = the host name the dashboard was opened on). The Api allows the dashboard's origin via CORS (`Dashboard:Origins`; all origins in Development/Offline).
 - **Fake data:** the dashboard uses `FakeHeatmapFeed` when it is opened with `?feed=fake` (http://localhost:5111/?feed=fake), and the real Api otherwise. `Dashboard – offline` opens that address (`launchUrl`), so it runs without the Api and docker. The launch profile's environment cannot make this choice: .NET 10 fixes a standalone WebAssembly app's environment at build time (`WasmApplicationEnvironmentName`, written into `dotnet.js`), so `ASPNETCORE_ENVIRONMENT` never reaches the browser and `IsEnvironment(...)` in the dashboard's `Program.cs` is always `Development` during development.
+- **Storage in the Api:** `Persistence:Mode` in the Api's `appsettings.json` chooses the repositories. `InMemory` (the default today, in all three modes) keeps events in memory, so they are lost when the Api restarts. `Database` is for the EF Core repositories and fails at startup until they exist (§9.2). `MainDbContext` and `Database.Migrate()` are registered in both modes. Manual requests for the event endpoints are in `processing-server/src/CrowdControl.Api/Events.http`.
 - Links are printed at startup by `bootstrap/…/startup/` (Java) and `Api/StartupLinks.cs` (C#: the Api's address and the dashboard's, each also per LAN IP, plus the fake-data link). The dashboard's dev server (`WebAssembly.DevServer`) cannot be extended and only prints `Now listening on`, which is why the Api prints the dashboard's links. New applications must print their link too.
 
 ---
@@ -607,7 +610,7 @@ CI uses path filters: `processing-server/**` only builds the Api solution, `dash
 
 **Næste skridt**
 
-- [ ] **Fields in `contracts/`.** Mostly agreed in PR #9: `GET /events/{eventId}` (`EventInfo` with `endTime` and `sendIntervalSeconds` for the mobile app), `POST /positions`, `PositionReceived`, `EventCreated`/`EventUpdated` and `Event`/`Zone`/`Polygon` in `common.v1.json`. Still missing: the snapshot changes (HeatmapSnapshot v2 below), the dashboard's endpoints for creating/editing/deleting events and zones (ID-7, ID-8) and listing events with status, login and passwords (ID-30/31/32), and the fields of `HeatmapHistory` (still `TODO` in `processing-api.yaml`, ID-37/38).
+- [ ] **Fields in `contracts/`.** Mostly agreed in PR #9: `GET /events/{eventId}` (`EventInfo` with `endTime` and `sendIntervalSeconds` for the mobile app), `POST /positions`, `PositionReceived`, `EventCreated`/`EventUpdated` and `Event`/`Zone`/`Polygon` in `common.v1.json`. `POST /events` (ID-13) was added in PR #33, see §9.2. Still missing: the snapshot changes (HeatmapSnapshot v2 below), the dashboard's endpoints for editing/deleting events, creating/editing/deleting zones (ID-7, ID-8), `GET /events/{id}`, and listing events with status (ID-24), login and passwords (ID-30/31/32), and the fields of `HeatmapHistory` (still `TODO` in `processing-api.yaml`, ID-37/38).
 - [ ] Gør acceptkriterierne i `docs/architecture/analyse/krav/user-stories.md` målbare (SMART), fx tærsklen for upræcise positioner (ID-40).
 - [x] C1–C4 i drawio og klassediagram for hele systemet i PlantUML (`docs/architecture/design/`). Den gamle `c2.drawio`/`c2.png` og `class-diagram.drawio` er slettet. C4-diagrammerne bruger drawio's C4-elementer med ortogonale (90°) pile: personer `mxgraph.c4.person2` (#6b6477), softwaresystem #3c6bb3, containere #5b9bd5, komponenter #dae8fc, domæne #d5e8d4, eksterne systemer #999999. Planlagte dele tegnes stiplet grå (#eef1f6/#8c9ab3). Sekvens-, protokol- og klassediagrammer laves i PlantUML.
 - [ ] Seed arrangørkontoen via EF Core-migration (hashet kodeord fra konfiguration, ikke i repoet; flag for skift ved første login).
@@ -661,6 +664,30 @@ The dashboard is its own container in C2, but it used to live in `CrowdControl.P
 - [ ] **Show a status instead of crashing when the Api cannot be reached.** Today `SignalRHeatmapFeed.StartAsync` throws, and Blazor shows "An unhandled error has occurred".
 
 **Lesson about stacked PRs:** #22 and #23 were stacked (`main ← #19 ← #22 ← #23`) and merged within 30 seconds. They went into their already-merged base branches instead of `main`, and #25 had to land them. Avoid stacked PRs. If you use them anyway, merge bottom-up, delete each branch before merging the next, and check that the next PR's base says `main`.
+
+### 9.2 ID-13: create an event (done 2026-11-10)
+
+`POST /events` and `GET /events/active` in processing-server, merged in PR #33 (the PR description has the full list of changes). Contract: `contracts/schemas/rest/CreateEventRequest.v1.json`, and the 201 returns `Event` from `common.v1.json`.
+
+**Decisions that still apply:**
+
+- **IDs are given when an event is saved.** The repository calls `Event.AssignId(Guid.CreateVersion7())`; `Id` is `Guid.Empty` until then, so `EventService` saves before it reads `Id`.
+- **The domain validates itself on construction:** `Event` (name, end after start, interval >= 1), `Boundary` (at least 3 points) and `GeoPoint` (latitude ±90, longitude ±180). The DTOs repeat the simple rules with attributes, so the 400 names the exact field.
+- **"The end time must be in the future"** is checked in `EventService`, because the domain does not know the current time. An event that has started but not ended can be created.
+- **"Active" means not ended yet** (upcoming and running), so ingestion-server knows an event before it starts.
+- **`sendIntervalSeconds` is sent by the arrangør for now**, since `Event` in the contract requires it (ID-29 is a separate story).
+- The request uses `DateTimeOffset`, so a time with an offset (`+01:00`) is converted to UTC.
+
+**Follow-ups:**
+
+- [ ] **ID-23: publish `EventCreated`.** Today ingestion-server only learns about a new event via `GET /events/active` at its own startup. ID-13's last acceptance criterion ("Ingestion-serveren kender eventet") is met that way; without a restart needs an `IEventPublisher` port with a fake and a RabbitMQ adapter in C#, and a listener in Java's `adapter-rabbit-in`. The contract (`EventCreated.v1.json`, `messaging.yaml`) is already complete.
+- [ ] **`GET /events/{id}`** in `processing-api.yaml` and `EventsController`. The `Location` header from `POST /events` already points to it. Probably needed for ID-24 or ID-33.
+- [ ] **EF Core repositories and a migration** for events (and later zones), then `Persistence:Mode` → `Database` (§4.1). `Event` and `Boundary` need a private parameterless constructor for EF Core, and `Zones`/`GeoPoints` are private fields behind read-only lists that EF must map.
+- [ ] **`Zone` has no `Id` yet** (ID-25). `EventMapping` sends `zones: []` until it does (`// TODO (ID-25)`).
+- [ ] **Team decisions:**
+  - Should "the end time must be in the future" be added to ID-13's acceptance criteria in `user-stories.md`?
+  - Should validation messages to the dashboard be in Danish (user-facing text, §10) or English with the dashboard translating by key?
+  - Should the keys in `errors` be camelCase like the JSON? Today they mix `Name`/`Area[1].Latitude` (DTO attributes) and `endTime` (domain). `SystemTextJsonValidationMetadataProvider` can switch the DTO keys to the JSON names.
 
 ---
 
