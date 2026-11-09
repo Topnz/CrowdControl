@@ -16,7 +16,7 @@ public static class EventMapping
             Area = source.Perimeter.GeoPoints
                 .Select(geoPoint => geoPoint.ToDto())
                 .ToList(),
-            // TODO: Zones not implemented yet
+            // TODO (ID-25): Implement zones
             Zones = []
         };
         
