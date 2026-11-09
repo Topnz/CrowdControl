@@ -102,6 +102,22 @@ Content-Type: application/json
   ]
 }
 
+### 6b. Send interval 0 -> 400, key "SendIntervalSeconds" ([Range] on the DTO)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "No interval",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 0,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
 ### 7. Danish time (+01:00) -> 201, the times come back one hour earlier with "Z"
 #    (startTime 2026-12-05T09:00:00Z, endTime 2026-12-05T21:00:00Z)
 POST {{baseUrl}}/events

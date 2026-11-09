@@ -9,15 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TEMP (ID-13)
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddInMemoryPersistence(builder.Configuration);
-} 
-else 
-{
-    builder.Services.AddPersistence(builder.Configuration);
-}
+// Repositories are chosen by "Persistence:Mode" in appsettings.json (InMemory until EF Core
+// repositories exist)
+builder.Services.AddPersistence(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
@@ -83,14 +77,11 @@ if (!builder.Environment.IsEnvironment("Offline"))
 var app = builder.Build();
 
 // Updates main-db to the latest EF Core migration at startup (requires docker compose)
-// TEMP (ID-13)
-/*
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Offline"))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
 }
-*/
 
 app.UseCors();
 

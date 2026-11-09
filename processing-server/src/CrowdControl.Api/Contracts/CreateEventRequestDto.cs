@@ -12,6 +12,9 @@ public class CreateEventRequestDto
     // System.Text.Json still accepts a time without one and then assumes the server's offset.
     public required DateTimeOffset StartTime { get; set; }
     public required DateTimeOffset EndTime { get; set; }
+    // Same rule as "minimum": 1 in the contract and as the domain's check, but with the key
+    // "SendIntervalSeconds" in the 400 instead of the domain's parameter name
+    [Range(1, int.MaxValue)]
     public required int SendIntervalSeconds { get; set; }
     [Required, MinLength(3)] 
     public required List<GeoPointDto> Area { get; set; }
