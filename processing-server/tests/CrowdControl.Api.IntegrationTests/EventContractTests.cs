@@ -38,6 +38,18 @@ public class EventContractTests
         AssertValid(RequestSchema, ValidRequest(), "CreateEventRequest.v1.json");
     }
 
+    // The dashboard may send Danish time with an offset instead of "Z"; both are valid date-time
+    [Fact]
+    public void CreateEventRequestWithOffset_MatchesContractAndConvertsToUtc()
+    {
+        CreateEventRequestDto request = ValidRequest();
+        request.StartTime = new DateTimeOffset(2026, 7, 1, 12, 0, 0, TimeSpan.FromHours(2));
+
+        AssertValid(RequestSchema, request, "CreateEventRequest.v1.json");
+        Assert.Equal(new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc), request.StartTime.UtcDateTime);
+        Assert.Equal(DateTimeKind.Utc, request.StartTime.UtcDateTime.Kind);
+    }
+
     // Guards against a schema that accepts anything, e.g. a $ref that resolves to nothing
     [Fact]
     public void CreateEventRequestWithTwoPoints_IsRejectedByContract()
@@ -65,8 +77,8 @@ public class EventContractTests
         {
             EventId = Guid.NewGuid(),
             Name = request.Name,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            StartTime = request.StartTime.UtcDateTime,
+            EndTime = request.EndTime.UtcDateTime,
             SendIntervalSeconds = request.SendIntervalSeconds,
             Area = request.Area,
             Zones = []
@@ -83,8 +95,8 @@ public class EventContractTests
         {
             EventId = Guid.NewGuid(),
             Name = request.Name,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
+            StartTime = request.StartTime.UtcDateTime,
+            EndTime = request.EndTime.UtcDateTime,
             SendIntervalSeconds = request.SendIntervalSeconds,
             Area = request.Area,
             Zones = [new ZoneDto { ZoneId = Guid.NewGuid(), Name = "Stage A", Area = request.Area }]
@@ -98,8 +110,8 @@ public class EventContractTests
         return new CreateEventRequestDto
         {
             Name = "Test-event",
-            StartTime = new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc),
-            EndTime = new DateTime(2026, 7, 1, 22, 0, 0, DateTimeKind.Utc),
+            StartTime = new DateTimeOffset(2026, 7, 1, 10, 0, 0, TimeSpan.Zero),
+            EndTime = new DateTimeOffset(2026, 7, 1, 22, 0, 0, TimeSpan.Zero),
             SendIntervalSeconds = 10,
             Area =
             [
