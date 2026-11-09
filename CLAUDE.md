@@ -199,7 +199,7 @@ CrowdControl/
 ├── contracts/                       # Det ENESTE der deles på tværs af containere
 │   ├── openapi/
 │   │   ├── ingestion-api.yaml       # POST /positions            (mobil → Java)
-│   │   └── processing-api.yaml      # GET /events/active, /heatmap, /history (→ C#)
+│   │   └── processing-api.yaml      # POST /events, GET /events/active, /heatmap, /history (→ C#)
 │   ├── asyncapi/
 │   │   ├── messaging.yaml           # positions-kø + event-exchange
 │   │   └── dashboard.yaml           # SignalR hub /hubs/heatmap (C# → dashboard)
@@ -211,6 +211,8 @@ CrowdControl/
 │       │   ├── EventCreated.v1.json
 │       │   ├── EventUpdated.v1.json
 │       │   └── EventDeleted.v1.json
+│       ├── rest/                    # request bodies for the REST APIs
+│       │   └── CreateEventRequest.v1.json   # POST /events (dashboard → C#, ID-13)
 │       └── shared/
 │           └── common.v1.json       # GeoPoint, Polygon, Zone, Event (AMQP + REST)
 │

@@ -1,3 +1,5 @@
+using CrowdControl.Application.ManageEvent;
+using CrowdControl.Infrastructure.Persistence.InMemory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +8,12 @@ namespace CrowdControl.Infrastructure.Persistence;
 
 public static class PersistenceServiceCollectionExtensions
 {
+    public static IServiceCollection AddInMemoryPersistence(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<IEventRepository, InMemoryEventRepository>();
+        return services;
+    }
+    
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("MainDb")
