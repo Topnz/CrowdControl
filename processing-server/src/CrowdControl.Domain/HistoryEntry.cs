@@ -1,3 +1,5 @@
+namespace CrowdControl.Domain;
+
 public class HistoryEntry
 {
     public DateTime Timestamp { get; set; }

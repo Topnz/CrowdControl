@@ -1,3 +1,5 @@
+namespace CrowdControl.Domain;
+
 public class Zone
 {
     public string Name { get; set; }

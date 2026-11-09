@@ -1,6 +1,7 @@
 using CrowdControl.Api;
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
+using CrowdControl.Application.ManageEvent;
 using CrowdControl.Application.MonitorEvent;
 using CrowdControl.Infrastructure.Messaging;
 using CrowdControl.Infrastructure.Persistence;
@@ -8,7 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Repositories are chosen by "Persistence:Mode" in appsettings.json (InMemory until EF Core
+// repositories exist)
 builder.Services.AddPersistence(builder.Configuration);
+
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 
@@ -39,7 +43,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
 //     StartTime = DateTime.UtcNow.AddHours(-1),
 //     EndTime = DateTime.UtcNow.AddDays(30),
 //     SendInterval = 10,
-//     Perimiter = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, denmarkEast),
+//     Perimeter = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, denmarkEast),
 //     Zones = new List<Zone>
 //     {
 //         new Zone { Name = "Vestdanmark", Boundary = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, zoneSplitLongitude) },
@@ -65,7 +69,7 @@ builder.Services.AddSingleton(new GridAggregator("Positioner fra køen"));
 builder.Services.AddSingleton<LatestHeatmap>();
 builder.Services.AddHostedService<HeatmapBroadcaster>();
 builder.Services.AddSingleton<IReceivePositionUseCase, ReceivePositionService>();
-
+builder.Services.AddScoped<EventService>();
 // Offline runs without RabbitMQ (fake messaging comes later)
 if (!builder.Environment.IsEnvironment("Offline"))
     builder.Services.AddRabbitMqMessaging(builder.Configuration);

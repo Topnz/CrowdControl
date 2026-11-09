@@ -1,9 +1,11 @@
-﻿namespace CrowdControl.Application.MonitorEvent;
+﻿using CrowdControl.Domain;
+
+namespace CrowdControl.Application.MonitorEvent;
 
 public class GridAggregator
 {
     private readonly string _eventName;
-    private readonly List<Zone> _zones;
+    private readonly IReadOnlyList<Zone> _zones;
 
     private readonly double _minLat;
     private readonly double _minLon;
@@ -27,25 +29,19 @@ public class GridAggregator
     }
 
     // Lat = 0.0002 and Lon = 0.00035 make squares of roughly 22 metres according to the AI; not sure these are actually the right numbers.
-    public GridAggregator(Event ev, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
+    public GridAggregator(Event monitoredEvent, double cellSizeLat = 0.0002, double cellSizeLon = 0.00035)
     {
-        _eventName = ev.Name;
+        _eventName = monitoredEvent.Name;
         _cellSizeLat = cellSizeLat;
         _cellSizeLon = cellSizeLon;
 
-        if (ev.Zones == null)
-        {
-            _zones = new List<Zone>();
-        }
-        else
-        {
-            _zones = ev.Zones;
-        }
+        // Event.Zones is never null and is read-only, so the aggregator cannot change the event's zones
+        _zones = monitoredEvent.Zones;
 
         // the grid is built from the lower-left corner 
         _minLat = double.MaxValue;
         _minLon = double.MaxValue;
-        IReadOnlyList<GeoPoint> corners = ev.Perimiter.GeoPoints;
+        IReadOnlyList<GeoPoint> corners = monitoredEvent.Perimeter.GeoPoints;
         for (int i = 0; i < corners.Count; i++)
         {
             if (corners[i].Latitude < _minLat)
