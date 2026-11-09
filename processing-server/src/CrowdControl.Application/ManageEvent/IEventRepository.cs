@@ -1,6 +1,9 @@
-﻿namespace CrowdControl.Application.ManageEvent;
+﻿using CrowdControl.Domain;
+
+namespace CrowdControl.Application.ManageEvent;
 
 public interface IEventRepository
 {
-    
+    Task SaveAsync(Event ev, CancellationToken ct);
+    Task<IReadOnlyList<Event>> GetActiveAsync(DateTime now, CancellationToken ct);
 }

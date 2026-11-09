@@ -1,6 +1,7 @@
 using CrowdControl.Api;
 using CrowdControl.Api.Hubs;
 using CrowdControl.Application;
+using CrowdControl.Application.ManageEvent;
 using CrowdControl.Application.MonitorEvent;
 using CrowdControl.Infrastructure.Messaging;
 using CrowdControl.Infrastructure.Persistence;
@@ -74,7 +75,7 @@ builder.Services.AddSingleton(new GridAggregator("Positioner fra køen"));
 builder.Services.AddSingleton<LatestHeatmap>();
 builder.Services.AddHostedService<HeatmapBroadcaster>();
 builder.Services.AddSingleton<IReceivePositionUseCase, ReceivePositionService>();
-
+builder.Services.AddScoped<EventService>();
 // Offline runs without RabbitMQ (fake messaging comes later)
 if (!builder.Environment.IsEnvironment("Offline"))
     builder.Services.AddRabbitMqMessaging(builder.Configuration);

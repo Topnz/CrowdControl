@@ -30,7 +30,7 @@ paths:
               schema:
                 $ref: '../schemas/shared/common.v1.json#/$defs/Event'
         '400':
-          description: "Name empty, endTime not after startTime, or fewer than 3 points"
+          description: "Name empty, endTime not after startTime, endTime not in the future, sendIntervalSeconds below 1, or fewer than 3 points. An event that has started but not ended is accepted."
           content:
             application/problem+json:
               schema:
