@@ -36,9 +36,23 @@ public class EventsController(EventService eventService) : ControllerBase
         catch (ArgumentException exception)
         {
             ModelStateDictionary errors = new ModelStateDictionary();
-            errors.AddModelError(exception.ParamName ?? string.Empty, exception.Message);
+            errors.AddModelError(exception.ParamName ?? string.Empty, MessageWithoutParameterName(exception));
             return ValidationProblem(errors);
         }
+    }
+
+    // ArgumentException.Message ends with " (Parameter 'endTime')" (and for
+    // ArgumentOutOfRangeException also "Actual value was …"). The parameter is already the key
+    // in "errors", so only the text before it is kept.
+    private static string MessageWithoutParameterName(ArgumentException exception)
+    {
+        if (exception.ParamName == null)
+        {
+            return exception.Message;
+        }
+
+        int suffixStart = exception.Message.IndexOf($" (Parameter '{exception.ParamName}')", StringComparison.Ordinal);
+        return suffixStart < 0 ? exception.Message : exception.Message[..suffixStart];
     }
 
     // Upcoming and running events; ingestion-server must know an event before it starts

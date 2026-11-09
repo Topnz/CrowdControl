@@ -4,7 +4,8 @@ namespace CrowdControl.Api.Contracts;
 
 public class CreateEventRequestDto
 {
-    [Required, MinLength(1)]
+    // [Required] on a string also rejects "" and whitespace, so no [MinLength(1)] is needed
+    [Required]
     public required string Name { get; set; }
     // DateTimeOffset instead of DateTime, so the offset the client sends ("Z" or "+01:00") is kept
     // and .UtcDateTime converts it to UTC. The contract's date-time format requires an offset;
