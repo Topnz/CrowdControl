@@ -11,16 +11,16 @@ public class EventTests
     [Fact]
     public void Constructor_ValidValues_CreatesEventWithoutId()
     {
-        Event ev = new Event("Roskilde", Start, End, 10, Triangle());
+        Event newEvent = new Event("Roskilde", Start, End, 10, Triangle());
 
-        Assert.Equal("Roskilde", ev.Name);
-        Assert.Equal(Start, ev.StartTime);
-        Assert.Equal(End, ev.EndTime);
-        Assert.Equal(10, ev.SendInterval);
-        Assert.Equal(3, ev.Perimeter.GeoPoints.Count);
-        Assert.Empty(ev.Zones);
+        Assert.Equal("Roskilde", newEvent.Name);
+        Assert.Equal(Start, newEvent.StartTime);
+        Assert.Equal(End, newEvent.EndTime);
+        Assert.Equal(10, newEvent.SendInterval);
+        Assert.Equal(3, newEvent.Perimeter.GeoPoints.Count);
+        Assert.Empty(newEvent.Zones);
         // The repository assigns the ID when the event is saved
-        Assert.Equal(Guid.Empty, ev.Id);
+        Assert.Equal(Guid.Empty, newEvent.Id);
     }
 
     [Fact]
@@ -73,21 +73,21 @@ public class EventTests
     [Fact]
     public void AssignId_FirstTime_SetsId()
     {
-        Event ev = new Event("Roskilde", Start, End, 10, Triangle());
+        Event newEvent = new Event("Roskilde", Start, End, 10, Triangle());
         Guid id = Guid.NewGuid();
 
-        ev.AssignId(id);
+        newEvent.AssignId(id);
 
-        Assert.Equal(id, ev.Id);
+        Assert.Equal(id, newEvent.Id);
     }
 
     [Fact]
     public void AssignId_Twice_Throws()
     {
-        Event ev = new Event("Roskilde", Start, End, 10, Triangle());
-        ev.AssignId(Guid.NewGuid());
+        Event newEvent = new Event("Roskilde", Start, End, 10, Triangle());
+        newEvent.AssignId(Guid.NewGuid());
 
-        Assert.Throws<InvalidOperationException>(() => ev.AssignId(Guid.NewGuid()));
+        Assert.Throws<InvalidOperationException>(() => newEvent.AssignId(Guid.NewGuid()));
     }
 
     private static Boundary Triangle()

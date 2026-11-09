@@ -8,15 +8,15 @@ public sealed class InMemoryEventRepository : IEventRepository
 {
     private readonly ConcurrentDictionary<Guid, Event> _events = new();
     
-    public Task SaveAsync(Event ev, CancellationToken ct)
+    public Task SaveAsync(Event eventToSave, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         
-        ev.AssignId(Guid.CreateVersion7());
+        eventToSave.AssignId(Guid.CreateVersion7());
         
-        return _events.TryAdd(ev.Id, ev)
+        return _events.TryAdd(eventToSave.Id, eventToSave)
             ? Task.CompletedTask
-            : throw new InvalidOperationException($"Event {ev.Id} already exists.");
+            : throw new InvalidOperationException($"Event {eventToSave.Id} already exists.");
     }
 
     public Task<IReadOnlyList<Event>> GetActiveAsync(DateTime now, CancellationToken ct)
@@ -24,7 +24,7 @@ public sealed class InMemoryEventRepository : IEventRepository
         ct.ThrowIfCancellationRequested();
 
         IReadOnlyList<Event> active = _events.Values
-            .Where(ev => ev.EndTime > now)
+            .Where(storedEvent => storedEvent.EndTime > now)
             .ToList();
         
         return Task.FromResult(active);

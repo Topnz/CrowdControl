@@ -12,16 +12,16 @@ internal sealed class FakeEventRepository : IEventRepository
 {
     public List<Event> Saved { get; } = [];
 
-    public Task SaveAsync(Event ev, CancellationToken ct)
+    public Task SaveAsync(Event eventToSave, CancellationToken ct)
     {
-        ev.AssignId(Guid.NewGuid());
-        Saved.Add(ev);
+        eventToSave.AssignId(Guid.NewGuid());
+        Saved.Add(eventToSave);
         return Task.CompletedTask;
     }
 
     public Task<IReadOnlyList<Event>> GetActiveAsync(DateTime now, CancellationToken ct)
     {
-        IReadOnlyList<Event> active = Saved.Where(ev => ev.EndTime > now).ToList();
+        IReadOnlyList<Event> active = Saved.Where(storedEvent => storedEvent.EndTime > now).ToList();
         return Task.FromResult(active);
     }
 }

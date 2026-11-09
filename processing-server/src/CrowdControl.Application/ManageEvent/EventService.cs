@@ -18,10 +18,10 @@ public class EventService(IEventRepository eventRepository)
         }
 
         Boundary boundary = new Boundary(geoPoints);
-        Event ev = new Event(name, startTime, endTime, sendInterval, boundary);
-        await eventRepository.SaveAsync(ev, ct);
+        Event newEvent = new Event(name, startTime, endTime, sendInterval, boundary);
+        await eventRepository.SaveAsync(newEvent, ct);
         
-        return ev;
+        return newEvent;
     }
     
     public Task<IReadOnlyList<Event>> GetActiveAsync(CancellationToken ct)

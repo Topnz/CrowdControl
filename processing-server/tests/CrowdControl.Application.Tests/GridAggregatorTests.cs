@@ -71,9 +71,9 @@ public class GridAggregatorTests
     [Fact]
     public void GetSnapshot_ZoneWithoutCapacity_GivesNullCapacity()
     {
-        Event ev = CreateTestEvent();
-        ev.Zones[0].Capacity = null;
-        GridAggregator aggregator = new GridAggregator(ev);
+        Event testEvent = CreateTestEvent();
+        testEvent.Zones[0].Capacity = null;
+        GridAggregator aggregator = new GridAggregator(testEvent);
 
         HeatmapSnapshot snapshot = aggregator.GetSnapshot();
 
@@ -85,9 +85,9 @@ public class GridAggregatorTests
     private static Event CreateTestEvent()
     {
         DateTime start = new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc);
-        Event ev = new Event("Test-event", start, start.AddHours(12), 10, Rectangle(0, 0.01, 0, 0.01));
-        ev.AddZone(new Zone { Name = "Test-zone", Capacity = 10, Boundary = Rectangle(0, 0.005, 0, 0.005) });
-        return ev;
+        Event testEvent = new Event("Test-event", start, start.AddHours(12), 10, Rectangle(0, 0.01, 0, 0.01));
+        testEvent.AddZone(new Zone { Name = "Test-zone", Capacity = 10, Boundary = Rectangle(0, 0.005, 0, 0.005) });
+        return testEvent;
     }
 
     private static Boundary Rectangle(double south, double north, double west, double east)
