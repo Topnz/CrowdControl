@@ -1,9 +1,11 @@
-﻿namespace CrowdControl.Application.MonitorEvent;
+﻿using CrowdControl.Domain;
+
+namespace CrowdControl.Application.MonitorEvent;
 
 public class GridAggregator
 {
     private readonly string _eventName;
-    private readonly List<Zone> _zones;
+    private readonly IReadOnlyList<Zone> _zones;
 
     private readonly double _minLat;
     private readonly double _minLon;
@@ -33,19 +35,13 @@ public class GridAggregator
         _cellSizeLat = cellSizeLat;
         _cellSizeLon = cellSizeLon;
 
-        if (ev.Zones == null)
-        {
-            _zones = new List<Zone>();
-        }
-        else
-        {
-            _zones = ev.Zones;
-        }
+        // Event.Zones is never null and is read-only, so the aggregator cannot change the event's zones
+        _zones = ev.Zones;
 
         // the grid is built from the lower-left corner 
         _minLat = double.MaxValue;
         _minLon = double.MaxValue;
-        IReadOnlyList<GeoPoint> corners = ev.Perimiter.GeoPoints;
+        IReadOnlyList<GeoPoint> corners = ev.Perimeter.GeoPoints;
         for (int i = 0; i < corners.Count; i++)
         {
             if (corners[i].Latitude < _minLat)

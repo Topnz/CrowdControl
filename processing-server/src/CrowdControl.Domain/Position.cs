@@ -1,3 +1,5 @@
+namespace CrowdControl.Domain;
+
 public class Position
 {
     public DateTime Timestamp { get; set; }

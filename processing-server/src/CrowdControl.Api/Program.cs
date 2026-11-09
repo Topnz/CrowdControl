@@ -48,7 +48,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
 //     StartTime = DateTime.UtcNow.AddHours(-1),
 //     EndTime = DateTime.UtcNow.AddDays(30),
 //     SendInterval = 10,
-//     Perimiter = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, denmarkEast),
+//     Perimeter = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, denmarkEast),
 //     Zones = new List<Zone>
 //     {
 //         new Zone { Name = "Vestdanmark", Boundary = Rectangle(denmarkSouth, denmarkNorth, denmarkWest, zoneSplitLongitude) },

@@ -1,3 +1,5 @@
+namespace CrowdControl.Domain;
+
 public class GeoPoint
 {
     public required double Latitude { get; set; }

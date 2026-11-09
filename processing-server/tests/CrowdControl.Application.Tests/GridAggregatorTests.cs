@@ -1,4 +1,5 @@
 ﻿using CrowdControl.Application.MonitorEvent;
+using CrowdControl.Domain;
 
 namespace CrowdControl.Application.Tests;
 
@@ -83,28 +84,20 @@ public class GridAggregatorTests
     // Event from (0, 0) to (0.01, 0.01) with one zone in the lower-left corner
     private static Event CreateTestEvent()
     {
-        return new Event
-        {
-            Name = "Test-event",
-            SendInterval = 10,
-            Perimiter = Rectangle(0, 0.01, 0, 0.01),
-            Zones = new List<Zone>
-            {
-                new Zone { Name = "Test-zone", Capacity = 10, Boundary = Rectangle(0, 0.005, 0, 0.005) }
-            }
-        };
+        DateTime start = new DateTime(2026, 7, 1, 10, 0, 0, DateTimeKind.Utc);
+        Event ev = new Event("Test-event", start, start.AddHours(12), 10, Rectangle(0, 0.01, 0, 0.01));
+        ev.AddZone(new Zone { Name = "Test-zone", Capacity = 10, Boundary = Rectangle(0, 0.005, 0, 0.005) });
+        return ev;
     }
 
     private static Boundary Rectangle(double south, double north, double west, double east)
     {
-        Boundary boundary = new Boundary();
-        boundary.AddGeoPoints(new List<GeoPoint>
+        return new Boundary(new List<GeoPoint>
         {
             new GeoPoint { Latitude = south, Longitude = west },
             new GeoPoint { Latitude = south, Longitude = east },
             new GeoPoint { Latitude = north, Longitude = east },
             new GeoPoint { Latitude = north, Longitude = west }
         });
-        return boundary;
     }
 }
