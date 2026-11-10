@@ -1,4 +1,6 @@
-﻿namespace CrowdControl.Application;
+﻿using CrowdControl.Domain;
+
+namespace CrowdControl.Application;
 
 public static class PolygonHelper
 {

@@ -22,6 +22,9 @@
   <ItemGroup>
     <!-- The contract the Api's DTOs must match (see HeatmapSnapshotContractTests) -->
     <None Include="..\..\..\contracts\schemas\signalr\HeatmapSnapshot.v1.json" Link="contracts\HeatmapSnapshot.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- POST /events (see EventContractTests); common.v1.json holds Polygon and Event -->
+    <None Include="..\..\..\contracts\schemas\rest\CreateEventRequest.v1.json" Link="contracts\CreateEventRequest.v1.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\contracts\schemas\shared\common.v1.json" Link="contracts\common.v1.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

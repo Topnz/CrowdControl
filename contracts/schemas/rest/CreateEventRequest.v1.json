@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crowdcontrol.dk/schemas/rest/CreateEventRequest.v1.json",
+  "title": "CreateEventRequest",
+  "description": "A request to the API for creating an event.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "startTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sendIntervalSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "How often the mobile app sends positions"
+    },
+    "area": {
+      "$ref": "../shared/common.v1.json#/$defs/Polygon"
+    }
+  },
+  "required": [
+    "name",
+    "startTime",
+    "endTime",
+    "sendIntervalSeconds",
+    "area"
+  ],
+  "additionalProperties": false
+}

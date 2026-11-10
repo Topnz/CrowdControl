@@ -6,6 +6,36 @@ info:
 servers:
   - url: http://localhost:5262
 paths:
+  /events:
+    post:
+      summary: Create Event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/rest/CreateEventRequest.v1.json'
+      responses:
+        '201':
+          description: The event created
+          headers:
+            Location:
+              description: The link to the new event
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '../schemas/shared/common.v1.json#/$defs/Event'
+        '400':
+          description: "Name empty, endTime not after startTime, endTime not in the future, sendIntervalSeconds below 1, or fewer than 3 points. An event that has started but not ended is accepted."
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                description: ProblemDetails
   /events/active:
     get:
       summary: Hent aktive events (kaldes af ingestion-server ved opstart)

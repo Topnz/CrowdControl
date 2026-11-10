@@ -1,0 +1,140 @@
+# Manual tests of POST /events and GET /events/active (ID-13).
+# Start "Api – lokal" first, then run each request with the green arrow (Rider) or
+# "Send Request" (VS Code with the REST Client extension).
+# The valid events end in December 2026; move the dates forward if they have passed, because
+# an event whose end is in the past is rejected.
+
+@baseUrl = http://localhost:5262
+
+### 1. Valid event -> 201, Location: /events/{id}, zones: []
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Roskilde Festival",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 },
+    { "latitude": 55.6150, "longitude": 12.0850 }
+  ]
+}
+
+### 2. End before start -> 400, key "endTime" (domain)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "End before start",
+  "startTime": "2026-12-03T22:00:00Z",
+  "endTime": "2026-12-01T10:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 3. End in the past -> 400, key "endTime" (EventService)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Roskilde 2020",
+  "startTime": "2020-07-01T10:00:00Z",
+  "endTime": "2020-07-05T22:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 4. Only 2 points -> 400, key "Area" ([MinLength(3)] on the DTO)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Two points",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 }
+  ]
+}
+
+### 5. Empty name -> 400, key "Name" ([Required] on the DTO)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 6. Latitude 500 on the second point -> 400, key "Area[1].Latitude" ([Range] on GeoPointDto)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Invalid latitude",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 500, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 6b. Send interval 0 -> 400, key "SendIntervalSeconds" ([Range] on the DTO)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "No interval",
+  "startTime": "2026-12-01T10:00:00Z",
+  "endTime": "2026-12-03T22:00:00Z",
+  "sendIntervalSeconds": 0,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 7. Danish time (+01:00) -> 201, the times come back one hour earlier with "Z"
+#    (startTime 2026-12-05T09:00:00Z, endTime 2026-12-05T21:00:00Z)
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Danish time",
+  "startTime": "2026-12-05T10:00:00+01:00",
+  "endTime": "2026-12-05T22:00:00+01:00",
+  "sendIntervalSeconds": 10,
+  "area": [
+    { "latitude": 55.6150, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0700 },
+    { "latitude": 55.6200, "longitude": 12.0850 }
+  ]
+}
+
+### 8. Active events -> 200 with the events from 1 and 7 (empty again after an Api restart)
+GET {{baseUrl}}/events/active
+Accept: application/json

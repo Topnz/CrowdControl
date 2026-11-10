@@ -1,3 +1,5 @@
+namespace CrowdControl.Domain;
+
 public class Organizer
 {
     public required string Username { get; set; }
