@@ -41,10 +41,13 @@ public class SignalRHeatmapFeed : IHeatmapFeed
 
     public async ValueTask DisposeAsync()
     {
-        if (_hub != null)
+        // Clear the field before awaiting, so a StartAsync that runs while this method waits
+        // (the next page starting the feed) is not overwritten.
+        HubConnection? hub = _hub;
+        _hub = null;
+        if (hub != null)
         {
-            await _hub.DisposeAsync();
-            _hub = null;
+            await hub.DisposeAsync();
         }
     }
 }

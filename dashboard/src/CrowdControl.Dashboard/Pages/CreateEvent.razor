@@ -8,6 +8,7 @@
 @inject CrowdControl.Dashboard.Services.MapService MapService
 
 @inject NavigationManager Navigation
+@implements IAsyncDisposable
 
 <PageTitle>CreateEvent</PageTitle>
 
@@ -52,11 +53,10 @@
         {
             await MapService.DisposeAsync();
             MapService.PolygonCompleted -= HandlePolygonCompleted;
-            await JS.InvokeVoidAsync("disposeMap");
         }
     }
 
-    private async void CreateEventbtn()
+    private async Task CreateEventbtn()
     {
         await FinishDrawing();
         if(name == null || sendInterval == null || sendInterval < 1 || startTime == null || endTime == null || polygon == null)

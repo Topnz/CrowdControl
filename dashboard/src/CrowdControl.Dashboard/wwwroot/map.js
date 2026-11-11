@@ -5,6 +5,9 @@ let heatLayer;
 window.initMap = function (dotnetReference) {
     mapDotNetReference = dotnetReference
 
+    // A map left over from the previous page would otherwise keep its layers and listeners
+    window.disposeMap();
+
     map = L.map('map').setView([55.6761, 12.5683], 8);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

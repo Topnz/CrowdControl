@@ -98,16 +98,21 @@ public class FakeHeatmapFeed : IHeatmapFeed
 
     public async ValueTask DisposeAsync()
     {
-        if (_cancellationSource != null)
+        // Clear the fields before awaiting, so a StartAsync that runs while this method waits
+        // (the next page starting the feed) is not overwritten.
+        CancellationTokenSource? cancellationSource = _cancellationSource;
+        Task? loop = _loop;
+        _cancellationSource = null;
+        _loop = null;
+
+        if (cancellationSource != null)
         {
-            await _cancellationSource.CancelAsync();
-            if (_loop != null)
+            await cancellationSource.CancelAsync();
+            if (loop != null)
             {
-                await _loop;
+                await loop;
             }
-            _cancellationSource.Dispose();
-            _cancellationSource = null;
-            _loop = null;
+            cancellationSource.Dispose();
         }
     }
 }

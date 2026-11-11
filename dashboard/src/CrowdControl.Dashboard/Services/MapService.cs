@@ -41,10 +41,16 @@ public class MapService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        // Everything that belongs to this page is removed before the first await: Blazor disposes
+        // the old page and then runs the new page's OnAfterRenderAsync without waiting for this
+        // method, so anything done after an await would hit the new page's map and reference.
         _mapInitialized = false;
         _feed.SnapshotReceived -= RenderAsync;
+        DotNetObjectReference<MapService>? dotNetReference = _dotNetReference;
+        _dotNetReference = null;
+        await _js.InvokeVoidAsync("disposeMap");
+        dotNetReference?.Dispose();
         await _feed.DisposeAsync();
-        _dotNetReference?.Dispose();
     }
 
     [JSInvokable]

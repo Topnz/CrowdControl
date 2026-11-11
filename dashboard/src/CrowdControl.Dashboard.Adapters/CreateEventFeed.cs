@@ -24,5 +24,7 @@ public class CreateEventFeed : ICreateEventFeed
             createEventRequestDto,
             cancellationToken
         );
+        
+        Console.WriteLine(response.Content.ReadAsStringAsync().Result);
     }
 }
