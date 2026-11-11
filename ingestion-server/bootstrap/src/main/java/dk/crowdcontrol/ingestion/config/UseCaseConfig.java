@@ -1,10 +1,13 @@
 package dk.crowdcontrol.ingestion.config;
 
 import dk.crowdcontrol.ingestion.application.port.in.ReceivePositionUseCase;
+import dk.crowdcontrol.ingestion.application.port.in.SyncActiveEventsUseCase;
 import dk.crowdcontrol.ingestion.application.port.out.ActiveEventRepository;
+import dk.crowdcontrol.ingestion.application.port.out.ActiveEventSource;
 import dk.crowdcontrol.ingestion.application.port.out.PositionPublisher;
 import dk.crowdcontrol.ingestion.application.port.out.RateLimiter;
 import dk.crowdcontrol.ingestion.application.service.ReceivePositionService;
+import dk.crowdcontrol.ingestion.application.service.SyncActiveEventsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,5 +31,17 @@ class UseCaseConfig
       PositionPublisher positionPublisher)
   {
     return new ReceivePositionService(rateLimiter, activeEventRepository, positionPublisher);
+  }
+
+  /**
+   * @param activeEventSource     ProcessingActiveEventSource, or EmptyActiveEventSource with the "offline" profile
+   * @param activeEventRepository InMemoryActiveEventRepository
+   * @return the use case called by ActiveEventSync at startup
+   */
+  @Bean
+  SyncActiveEventsUseCase syncActiveEventsUseCase(ActiveEventSource activeEventSource,
+      ActiveEventRepository activeEventRepository)
+  {
+    return new SyncActiveEventsService(activeEventSource, activeEventRepository);
   }
 }
