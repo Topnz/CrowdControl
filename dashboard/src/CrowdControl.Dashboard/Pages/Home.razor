@@ -4,11 +4,14 @@
 @inject CrowdControl.Dashboard.Services.MapService MapService
 @implements IAsyncDisposable
 
+@inject NavigationManager Navigation
+
 <PageTitle>Home</PageTitle>
 
 <h3>Map</h3>
 
 <div id="map" style="height:400px; width:100%;"></div>
+<button @onclick="() => openCreateEvent()">Create new event</button>
 
 @code {
     private bool initialized;
@@ -29,5 +32,10 @@
             await MapService.DisposeAsync();
             await JS.InvokeVoidAsync("disposeMap");
         }
+    }
+
+    private void openCreateEvent()
+    {
+        Navigation.NavigateTo("/create-event");
     }
 }

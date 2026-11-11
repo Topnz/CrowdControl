@@ -1,0 +1,109 @@
+@page "/create-event"
+
+@using CrowdControl.Dashboard.Adapters
+@using CrowdControl.Dashboard.Core.Contracts;
+@using CrowdControl.Dashboard.Core.Ports
+@inject IJSRuntime JS
+@inject ICreateEventFeed CreateEventFeed
+@inject CrowdControl.Dashboard.Services.MapService MapService
+
+@inject NavigationManager Navigation
+
+<PageTitle>CreateEvent</PageTitle>
+
+<input type="text" placeholder="navn på event" @bind="name"/>
+<input type="datetime-local" placeholder="et eller andet" @bind="startTime"/>
+<input type="datetime-local" placeholder="noget trejde" @bind="endTime"/>
+<input type="number" placeholder="noget trejde" @bind="sendInterval"/>
+
+<div id="map" style="height:400px; width:100%;"></div>
+
+<button @onclick="() => CreateEventbtn()"> Create event</button>
+
+
+@code {
+    private string? name;
+
+    private DateTimeOffset? startTime = DateTimeOffset.Now;
+
+    private DateTimeOffset? endTime = DateTimeOffset.Now;
+
+    private int? sendInterval;
+
+    private List<GeoPointDto>?polygon;
+
+    private bool initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await MapService.InitializeAsync();
+            MapService.PolygonCompleted += HandlePolygonCompleted;
+            await StartDrawing();
+
+            initialized = true;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (initialized)
+        {
+            await MapService.DisposeAsync();
+            MapService.PolygonCompleted -= HandlePolygonCompleted;
+            await JS.InvokeVoidAsync("disposeMap");
+        }
+    }
+
+    private async void CreateEventbtn()
+    {
+        await FinishDrawing();
+        if(name == null || sendInterval == null || sendInterval < 1 || startTime == null || endTime == null || polygon == null)
+        {
+            Console.WriteLine(name);
+            Console.WriteLine(sendInterval);
+            Console.WriteLine(startTime);
+            Console.WriteLine(endTime);
+            Console.WriteLine(polygon);
+            Console.WriteLine("Cannot create event");
+            return;
+        }
+        
+
+        
+        //Call to create event
+        CreateEventRequestDto createEventRequst = new CreateEventRequestDto
+        {
+            Name = name, 
+            StartTime = startTime.Value, 
+            EndTime = endTime.Value, 
+            SendIntervalSeconds = sendInterval.Value, 
+            Area = polygon
+        };
+        CreateEventFeed.CreateEvent(createEventRequst, new CancellationToken());
+        
+        Navigation.NavigateTo("/");
+    }
+    private async Task StartDrawing()
+    {
+        await MapService.StartPolygonDrawingAsync();
+    }
+
+    private async Task FinishDrawing()
+    {
+        await MapService.FinishPolygonDrawingAsync();
+    }
+
+    private async Task CancelDrawing()
+    {
+        await MapService.CancelPolygonDrawingAsync();
+    }
+
+    private void HandlePolygonCompleted(List<GeoPointDto> polygon)
+    {
+        this.polygon = polygon;
+
+        InvokeAsync(StateHasChanged);
+    }
+}
