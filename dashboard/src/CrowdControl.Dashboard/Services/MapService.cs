@@ -11,6 +11,8 @@ public class MapService : IAsyncDisposable
     private readonly IJSRuntime _js;
     private readonly IHeatmapFeed _feed;
     private bool _mapInitialized;
+    private DotNetObjectReference<MapService>? _dotNetReference;
+    public event Action<List<GeoPointDto>>? PolygonCompleted;
 
     public MapService(IJSRuntime js, IHeatmapFeed feed)
     {
@@ -20,7 +22,9 @@ public class MapService : IAsyncDisposable
 
     public async Task InitializeAsync()
     {
-        await _js.InvokeVoidAsync("initMap");
+        _dotNetReference = DotNetObjectReference.Create(this);
+
+        await _js.InvokeVoidAsync("initMap", _dotNetReference);
         _mapInitialized = true;
 
         _feed.SnapshotReceived += RenderAsync;
@@ -40,5 +44,33 @@ public class MapService : IAsyncDisposable
         _mapInitialized = false;
         _feed.SnapshotReceived -= RenderAsync;
         await _feed.DisposeAsync();
+        _dotNetReference?.Dispose();
+    }
+
+    [JSInvokable]
+    public Task OnPolygonCompleted(List<GeoPointDto> coordinates)
+    {
+        PolygonCompleted?.Invoke(coordinates);
+
+        return Task.CompletedTask;
+    }
+
+    public Task StartPolygonDrawingAsync()
+    {
+        return _js.InvokeVoidAsync(
+            "startPolygonDrawing"
+        ).AsTask();
+    }
+
+    public async Task FinishPolygonDrawingAsync()
+    {
+        await _js.InvokeVoidAsync("finishPolygonDrawing");
+    }
+
+    public Task CancelPolygonDrawingAsync()
+    {
+        return _js.InvokeVoidAsync(
+            "cancelPolygonDrawing"
+        ).AsTask();
     }
 }

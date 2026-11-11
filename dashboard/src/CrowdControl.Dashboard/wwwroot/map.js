@@ -1,7 +1,10 @@
 let map;
+let mapDotNetReference
 let heatLayer;
 
-window.initMap = function () {
+window.initMap = function (dotnetReference) {
+    mapDotNetReference = dotnetReference
+
     map = L.map('map').setView([55.6761, 12.5683], 8);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -40,4 +43,184 @@ window.renderHeatmap = function (snapshot) {
             weight: 1
         }).bindTooltip(`${cell.count}`).addTo(heatLayer);
     }
+};
+
+// Draws a polygon on the map
+window.polygonDrawing = (function () {
+
+    let map = null;
+    let dotNetReference = null;
+
+    let points = [];
+    let markers = [];
+
+    let polygon = null;
+    let previewLine = null;
+
+    let drawingLayer = null;
+    let isDrawing = false;
+
+    function startDrawing(mapInstance, dotNetRef) {
+        map = mapInstance;
+        dotNetReference = dotNetRef;
+
+        clearDrawing();
+
+        drawingLayer = L.featureGroup().addTo(map);
+
+        points = [];
+        markers = [];
+        isDrawing = true;
+
+        map.on('click', onMapClick);
+        map.on('mousemove', onMouseMove);
+    }
+
+    function onMapClick(e) {
+        if (!isDrawing) return;
+
+        const point = e.latlng;
+
+        points.push({
+            latitude: point.lat,
+            longitude: point.lng
+        });
+
+        // Add vertex marker
+        const marker = L.circleMarker(point, {
+            radius: 5,
+            color: '#2563eb',
+            fillColor: '#ffffff',
+            fillOpacity: 1
+        });
+
+        marker.addTo(drawingLayer);
+        markers.push(marker);
+
+        updatePolygon();
+    }
+
+    function onMouseMove(e) {
+        if (!isDrawing || points.length === 0) return;
+
+        const coordinates = points.map(p => [
+            p.latitude,
+            p.longitude
+        ]);
+
+        coordinates.push([
+            e.latlng.lat,
+            e.latlng.lng
+        ]);
+
+        if (previewLine) {
+            drawingLayer.removeLayer(previewLine);
+        }
+    }
+
+    function updatePolygon() {
+        if (previewLine) {
+            drawingLayer.removeLayer(previewLine);
+            previewLine = null;
+        }
+
+        if (polygon) {
+            drawingLayer.removeLayer(polygon);
+            polygon = null;
+        }
+
+        if (points.length < 2) return;
+
+        const coordinates = points.map(p => [
+            p.latitude,
+            p.longitude
+        ]);
+
+        polygon = L.polygon(coordinates, {
+            color: '#2563eb',
+            weight: 2,
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2
+        }).addTo(drawingLayer);
+    }
+
+    async function finishDrawing() {
+        if (!isDrawing || points.length < 3) {
+            return;
+        }
+        
+        isDrawing = false;
+
+        map.off('click', onMapClick);
+        map.off('mousemove', onMouseMove);
+
+        // Close polygon
+        const coordinates = [...points];
+
+        const first = coordinates[0];
+        const last = coordinates[coordinates.length - 1];
+
+        if (
+            first.latitude !== last.latitude ||
+            first.longitude !== last.longitude
+        ) {
+            coordinates.push({ ...first });
+        }
+
+        // Send coordinates to C#
+        await dotNetReference.invokeMethodAsync(
+            'OnPolygonCompleted',
+            coordinates
+        );
+
+        points = [];
+        markers = [];
+        polygon = null;
+        previewLine = null;
+    }
+
+    function cancelDrawing() {
+        if (map) {
+            map.off('click', onMapClick);
+            map.off('mousemove', onMouseMove);
+        }
+
+        isDrawing = false;
+        points = [];
+        markers = [];
+        polygon = null;
+        previewLine = null;
+
+        if (drawingLayer) {
+            drawingLayer.clearLayers();
+        }
+    }
+
+    function clearDrawing() {
+        if (drawingLayer) {
+            drawingLayer.clearLayers();
+        }
+    }
+
+    return {
+        startDrawing,
+        finishDrawing,
+        cancelDrawing
+    };
+
+})();
+
+window.startPolygonDrawing = function () {
+    window.polygonDrawing.startDrawing(
+        map,
+        mapDotNetReference
+    );
+};
+
+window.finishPolygonDrawing = function () {
+    return window.polygonDrawing.finishDrawing();
+};
+
+window.cancelPolygonDrawing = function () {
+    window.polygonDrawing.cancelDrawing();
 };

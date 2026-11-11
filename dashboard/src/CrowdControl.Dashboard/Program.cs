@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using CrowdControl.Dashboard.Adapters;
 using CrowdControl.Dashboard.Services;
 using CrowdControl.Dashboard;
+using CrowdControl.Dashboard.Core.Ports;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -19,6 +20,7 @@ builder.Services.AddScoped(serviceProvider => new HttpClient { BaseAddress = api
 builder.Services.AddHeatmapFeed(api, serviceProvider => FakeFeedRequested(serviceProvider.GetRequiredService<NavigationManager>().Uri));
 
 builder.Services.AddScoped<MapService>();
+builder.Services.AddScoped<ICreateEventFeed, CreateEventFeed>();
 
 await builder.Build().RunAsync();
 
